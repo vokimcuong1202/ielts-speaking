@@ -1,0 +1,364 @@
+generator client {
+  provider        = "prisma-client-js"
+  output          = "./generated/client"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgcrypto]
+}
+
+// ---------------------------------------------------------------------
+// ENUMS
+// ---------------------------------------------------------------------
+
+enum UserRole {
+  student
+  teacher
+  admin
+
+  @@map("user_role")
+}
+
+enum SubscriptionStatus {
+  active
+  expired
+  canceled
+  past_due
+
+  @@map("subscription_status")
+}
+
+enum QuestionPart {
+  part1
+  part2
+  part3
+
+  @@map("question_part")
+}
+
+enum AttemptStatus {
+  pending_scoring
+  processing
+  completed
+  failed
+
+  @@map("attempt_status")
+}
+
+enum SessionType {
+  part1_drill
+  part2_drill
+  part3_drill
+  mock_test
+
+  @@map("session_type")
+}
+
+enum SessionStatus {
+  in_progress
+  completed
+  abandoned
+
+  @@map("session_status")
+}
+
+enum AiCallType {
+  stt
+  pronunciation
+  llm_scoring
+
+  @@map("ai_call_type")
+}
+
+enum CorrectionType {
+  grammar
+  vocabulary
+  coherence
+
+  @@map("correction_type")
+}
+
+// ---------------------------------------------------------------------
+// USERS
+// ---------------------------------------------------------------------
+
+model User {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email        String    @unique
+  passwordHash String?   @map("password_hash")
+  googleId     String?   @unique @map("google_id")
+  name         String
+  role         UserRole  @default(student)
+  targetBand   Decimal?  @map("target_band") @db.Decimal(2, 1)
+  examDate     DateTime? @map("exam_date") @db.Date
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  subscriptions    Subscription[]
+  practiceSessions PracticeSession[]
+  attempts         Attempt[]
+  streak           Streak?
+  aiUsageLogs      AiUsageLog[]
+  classesTaught    Class[]           @relation("ClassTeacher")
+  classMemberships ClassMember[]
+
+  @@index([role])
+  @@map("users")
+}
+
+// ---------------------------------------------------------------------
+// SUBSCRIPTIONS
+// ---------------------------------------------------------------------
+
+model Subscription {
+  id                       String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId                   String              @map("user_id") @db.Uuid
+  status                   SubscriptionStatus  @default(expired)
+  provider                 String
+  providerCustomerId       String?             @map("provider_customer_id")
+  providerSubscriptionId   String?             @map("provider_subscription_id")
+  currentPeriodStart       DateTime?           @map("current_period_start") @db.Timestamptz(6)
+  currentPeriodEnd         DateTime?           @map("current_period_end") @db.Timestamptz(6)
+  canceledAt               DateTime?           @map("canceled_at") @db.Timestamptz(6)
+  createdAt                DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt                DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // NOTE: a partial unique index (one active subscription per user) is
+  // created in the migration SQL as `uq_subscriptions_active_per_user`;
+  // Prisma's schema language cannot express a WHERE clause on @@unique.
+  @@index([userId])
+  @@index([status])
+  @@map("subscriptions")
+}
+
+// ---------------------------------------------------------------------
+// TOPIC GROUPS & QUESTIONS
+// ---------------------------------------------------------------------
+
+model TopicGroup {
+  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name           String
+  forecastSeason String?  @map("forecast_season")
+  isActive       Boolean  @default(true) @map("is_active")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  questions        Question[]
+  practiceSessions PracticeSession[]
+  assignments      Assignment[]
+
+  @@index([forecastSeason])
+  @@index([isActive])
+  @@map("topic_groups")
+}
+
+model Question {
+  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  topicGroupId String       @map("topic_group_id") @db.Uuid
+  part         QuestionPart
+  text         String
+  orderIndex   Int          @default(0) @map("order_index")
+  prepSeconds  Int?         @map("prep_seconds")
+  speakSeconds Int?         @map("speak_seconds")
+  createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt    DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  topicGroup TopicGroup @relation(fields: [topicGroupId], references: [id], onDelete: Cascade)
+  attempts   Attempt[]
+
+  // NOTE: the CHECK constraint (`chk_part2_timing`) and the partial unique
+  // index (`uq_one_part2_per_topic_group`, one Part 2 cue card per topic
+  // group) live in the migration SQL — not expressible in schema.prisma.
+  @@index([topicGroupId])
+  @@index([part])
+  @@map("questions")
+}
+
+// ---------------------------------------------------------------------
+// PRACTICE SESSIONS
+// ---------------------------------------------------------------------
+
+model PracticeSession {
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId       String        @map("user_id") @db.Uuid
+  type         SessionType
+  status       SessionStatus @default(in_progress)
+  topicGroupId String?       @map("topic_group_id") @db.Uuid
+  startedAt    DateTime      @default(now()) @map("started_at") @db.Timestamptz(6)
+  completedAt  DateTime?     @map("completed_at") @db.Timestamptz(6)
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topicGroup TopicGroup? @relation(fields: [topicGroupId], references: [id])
+  attempts   Attempt[]
+  sessionScore SessionScore?
+
+  @@index([userId, startedAt(sort: Desc)])
+  @@index([status])
+  @@map("practice_sessions")
+}
+
+// ---------------------------------------------------------------------
+// ATTEMPTS
+// ---------------------------------------------------------------------
+
+model Attempt {
+  id                  String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionId           String        @map("session_id") @db.Uuid
+  userId              String        @map("user_id") @db.Uuid
+  questionId          String        @map("question_id") @db.Uuid
+  status              AttemptStatus @default(pending_scoring)
+  rawAudioKey         String        @map("raw_audio_key")
+  normalizedAudioKey  String?       @map("normalized_audio_key")
+  durationSeconds     Decimal?      @map("duration_seconds") @db.Decimal(6, 2)
+  transcript          String?
+  fillerWordCount     Int?          @map("filler_word_count")
+  failureReason       String?       @map("failure_reason")
+  createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  updatedAt           DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  session     PracticeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  question    Question        @relation(fields: [questionId], references: [id])
+  score       Score?
+  aiUsageLogs AiUsageLog[]
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([sessionId])
+  @@index([status])
+  @@map("attempts")
+}
+
+// ---------------------------------------------------------------------
+// SCORES (per attempt)
+// ---------------------------------------------------------------------
+
+model Score {
+  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  attemptId             String   @unique @map("attempt_id") @db.Uuid
+  fluencyCoherence      Decimal  @map("fluency_coherence") @db.Decimal(2, 1)
+  lexicalResource       Decimal  @map("lexical_resource") @db.Decimal(2, 1)
+  grammaticalRange      Decimal  @map("grammatical_range") @db.Decimal(2, 1)
+  pronunciation         Decimal  @db.Decimal(2, 1)
+  overallBand           Decimal  @map("overall_band") @db.Decimal(2, 1)
+  corrections           Json     @default("[]")
+  summaryFeedback       String?  @map("summary_feedback")
+  rawPronunciationData  Json?    @map("raw_pronunciation_data")
+  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  attempt Attempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
+
+  // NOTE: 0-9 band range CHECK constraints live in the migration SQL.
+  @@index([attemptId])
+  @@map("scores")
+}
+
+// ---------------------------------------------------------------------
+// SESSION SCORES (aggregated, no AI call — pure computation)
+// ---------------------------------------------------------------------
+
+model SessionScore {
+  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  sessionId         String   @unique @map("session_id") @db.Uuid
+  fluencyCoherence  Decimal  @map("fluency_coherence") @db.Decimal(2, 1)
+  lexicalResource   Decimal  @map("lexical_resource") @db.Decimal(2, 1)
+  grammaticalRange  Decimal  @map("grammatical_range") @db.Decimal(2, 1)
+  pronunciation     Decimal  @db.Decimal(2, 1)
+  overallBand       Decimal  @map("overall_band") @db.Decimal(2, 1)
+  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  session PracticeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+
+  @@map("session_scores")
+}
+
+// ---------------------------------------------------------------------
+// STREAKS
+// ---------------------------------------------------------------------
+
+model Streak {
+  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId            String    @unique @map("user_id") @db.Uuid
+  currentStreak     Int       @default(0) @map("current_streak")
+  longestStreak     Int       @default(0) @map("longest_streak")
+  lastPracticeDate  DateTime? @map("last_practice_date") @db.Date
+  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("streaks")
+}
+
+// ---------------------------------------------------------------------
+// AI USAGE LOG
+// ---------------------------------------------------------------------
+
+model AiUsageLog {
+  id                 String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  userId             String     @map("user_id") @db.Uuid
+  attemptId          String?    @map("attempt_id") @db.Uuid
+  callType           AiCallType @map("call_type")
+  provider           String
+  durationOrTokens   Decimal?   @map("duration_or_tokens") @db.Decimal(10, 2)
+  estimatedCostUsd   Decimal    @default(0) @map("estimated_cost_usd") @db.Decimal(10, 6)
+  createdAt          DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  attempt Attempt? @relation(fields: [attemptId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([callType])
+  @@map("ai_usage_logs")
+}
+
+// ---------------------------------------------------------------------
+// CLASSES (teacher features)
+// ---------------------------------------------------------------------
+
+model Class {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  teacherId  String   @map("teacher_id") @db.Uuid
+  name       String
+  inviteCode String   @unique @map("invite_code")
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  teacher     User          @relation("ClassTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
+  members     ClassMember[]
+  assignments Assignment[]
+
+  @@index([teacherId])
+  @@map("classes")
+}
+
+model ClassMember {
+  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  classId   String   @map("class_id") @db.Uuid
+  studentId String   @map("student_id") @db.Uuid
+  joinedAt  DateTime @default(now()) @map("joined_at") @db.Timestamptz(6)
+
+  class   Class @relation(fields: [classId], references: [id], onDelete: Cascade)
+  student User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+
+  @@unique([classId, studentId])
+  @@index([classId])
+  @@index([studentId])
+  @@map("class_members")
+}
+
+model Assignment {
+  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  classId      String    @map("class_id") @db.Uuid
+  topicGroupId String?   @map("topic_group_id") @db.Uuid
+  title        String
+  dueDate      DateTime? @map("due_date") @db.Date
+  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+
+  class      Class       @relation(fields: [classId], references: [id], onDelete: Cascade)
+  topicGroup TopicGroup? @relation(fields: [topicGroupId], references: [id])
+
+  @@index([classId])
+  @@map("assignments")
+}

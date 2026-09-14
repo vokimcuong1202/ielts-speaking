@@ -1,0 +1,21 @@
+{
+  "name": "english-speaking-ai",
+  "private": true,
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "test": "turbo run test",
+    "db:migrate": "pnpm --filter database prisma migrate dev",
+    "db:generate": "pnpm --filter database prisma generate",
+    "db:seed": "pnpm --filter database run seed"
+  },
+  "devDependencies": {
+    "turbo": "^2.1.0",
+    "typescript": "^5.5.0"
+  }
+}
