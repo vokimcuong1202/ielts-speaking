@@ -1,38 +1,41 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../../infrastructure/database/prisma.service";
-import { UsageType } from "../../../../../database/generated/client";
+import { AiCallType } from "../../../../../database/generated/client";
 
 @Injectable()
 export class QuotaRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  findActiveAccount(userId: string, now: Date) {
-    return this.prisma.quotaAccount.findFirst({
-      where: { userId, periodStart: { lte: now }, periodEnd: { gte: now } },
+  async sumUsageSecondsInPeriod(userId: string, callType: AiCallType, periodStart: Date, periodEnd: Date) {
+    const result = await this.prisma.aiUsageLog.aggregate({
+      _sum: { durationOrTokens: true },
+      where: {
+        userId,
+        callType,
+        createdAt: { gte: periodStart, lt: periodEnd },
+      },
     });
+
+    return result._sum.durationOrTokens?.toNumber() ?? 0;
   }
 
-  createAccount(userId: string, quotaSeconds: number, periodStart: Date, periodEnd: Date) {
-    return this.prisma.quotaAccount.create({
-      data: { userId, quotaSeconds, periodStart, periodEnd },
-    });
-  }
-
-  incrementUsedSeconds(quotaAccountId: string, seconds: number) {
-    return this.prisma.quotaAccount.update({
-      where: { id: quotaAccountId },
-      data: { usedSeconds: { increment: seconds } },
-    });
-  }
-
-  recordUsageEvent(params: {
+  recordUsage(params: {
     userId: string;
-    sessionId: string;
-    type: UsageType;
-    quantity: number;
+    attemptId?: string;
+    callType: AiCallType;
     provider: string;
-    cost?: number;
+    durationOrTokens?: number;
+    estimatedCostUsd?: number;
   }) {
-    return this.prisma.usageEvent.create({ data: params });
+    return this.prisma.aiUsageLog.create({
+      data: {
+        userId: params.userId,
+        attemptId: params.attemptId,
+        callType: params.callType,
+        provider: params.provider,
+        durationOrTokens: params.durationOrTokens,
+        estimatedCostUsd: params.estimatedCostUsd,
+      },
+    });
   }
 }

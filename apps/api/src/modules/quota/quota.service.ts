@@ -1,66 +1,69 @@
 import { ForbiddenException, Injectable } from "@nestjs/common";
 import { QuotaRepository } from "./quota.repository";
 import { QuotaSummary } from "./models/quota-summary.model";
-import { UsageType } from "../../../../../database/generated/client";
+import { AiCallType } from "../../../../../database/generated/client";
 
 @Injectable()
 export class QuotaService {
   constructor(private readonly quotaRepository: QuotaRepository) {}
 
-  async createInitialAccount(userId: string) {
-    const periodStart = new Date();
-    const periodEnd = new Date(periodStart);
-    periodEnd.setDate(periodEnd.getDate() + 30);
-
-    const quotaSeconds = parseInt(process.env.DEFAULT_PLAN_QUOTA_SECONDS ?? "1800", 10);
-
-    return this.quotaRepository.createAccount(userId, quotaSeconds, periodStart, periodEnd);
+  private currentMonthPeriod(now = new Date()) {
+    const periodStart = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1));
+    const periodEnd = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() + 1, 1));
+    return { periodStart, periodEnd };
   }
 
-  async getSummary(userId: string): Promise<QuotaSummary | null> {
-    const account = await this.quotaRepository.findActiveAccount(userId, new Date());
-    if (!account) return null;
+  async getSummary(userId: string): Promise<QuotaSummary> {
+    const { periodStart, periodEnd } = this.currentMonthPeriod();
+    const usedSeconds = await this.quotaRepository.sumUsageSecondsInPeriod(
+      userId,
+      AiCallType.stt,
+      periodStart,
+      periodEnd,
+    );
+    const quotaSeconds = parseInt(process.env.DEFAULT_PLAN_QUOTA_SECONDS ?? "1800", 10);
 
     return {
-      quotaSeconds: account.quotaSeconds,
-      usedSeconds: account.usedSeconds,
-      remainingSeconds: account.quotaSeconds - account.usedSeconds,
-      periodStart: account.periodStart,
-      periodEnd: account.periodEnd,
+      quotaSeconds,
+      usedSeconds,
+      remainingSeconds: quotaSeconds - usedSeconds,
+      periodStart,
+      periodEnd,
     };
   }
 
   async assertHasQuota(userId: string, requiredSeconds: number) {
     const summary = await this.getSummary(userId);
-    if (!summary || summary.remainingSeconds < requiredSeconds) {
+    if (summary.remainingSeconds < requiredSeconds) {
       throw new ForbiddenException("Speaking quota exceeded for this billing period.");
     }
   }
 
-  async recordTranscriptionUsage(userId: string, sessionId: string, durationSeconds: number, provider: string, cost?: number) {
-    const account = await this.quotaRepository.findActiveAccount(userId, new Date());
-    if (account) {
-      await this.quotaRepository.incrementUsedSeconds(account.id, durationSeconds);
-    }
-
-    await this.quotaRepository.recordUsageEvent({
+  recordTranscriptionUsage(
+    userId: string,
+    attemptId: string,
+    durationSeconds: number,
+    provider: string,
+    cost?: number,
+  ) {
+    return this.quotaRepository.recordUsage({
       userId,
-      sessionId,
-      type: UsageType.TRANSCRIPTION,
-      quantity: durationSeconds,
+      attemptId,
+      callType: AiCallType.stt,
       provider,
-      cost,
+      durationOrTokens: durationSeconds,
+      estimatedCostUsd: cost,
     });
   }
 
-  async recordEvaluationUsage(userId: string, sessionId: string, provider: string, cost?: number) {
-    await this.quotaRepository.recordUsageEvent({
+  recordEvaluationUsage(userId: string, attemptId: string, provider: string, tokens?: number, cost?: number) {
+    return this.quotaRepository.recordUsage({
       userId,
-      sessionId,
-      type: UsageType.EVALUATION,
-      quantity: 1,
+      attemptId,
+      callType: AiCallType.llm_scoring,
       provider,
-      cost,
+      durationOrTokens: tokens,
+      estimatedCostUsd: cost,
     });
   }
 }

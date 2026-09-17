@@ -6,7 +6,7 @@ import { QueueModule } from "./infrastructure/queue/queue.module";
 
 import { AuthModule } from "./modules/auth/auth.module";
 import { UsersModule } from "./modules/users/users.module";
-import { ExercisesModule } from "./modules/exercises/exercises.module";
+import { TopicGroupsModule } from "./modules/topic-groups/topic-groups.module";
 import { PracticeSessionsModule } from "./modules/practice-sessions/practice-sessions.module";
 import { AudioModule } from "./modules/audio/audio.module";
 import { TranscriptionModule } from "./modules/transcription/transcription.module";
@@ -21,7 +21,7 @@ import { WorkersModule } from "./workers/workers.module";
     QueueModule,
     AuthModule,
     UsersModule,
-    ExercisesModule,
+    TopicGroupsModule,
     PracticeSessionsModule,
     AudioModule,
     TranscriptionModule,

@@ -3,7 +3,6 @@ import { JwtService } from "@nestjs/jwt";
 import * as bcrypt from "bcrypt";
 
 import { UsersService } from "../users/users.service";
-import { QuotaService } from "../quota/quota.service";
 import { RegisterDto } from "./dto/register.dto";
 import { LoginDto } from "./dto/login.dto";
 
@@ -11,7 +10,6 @@ import { LoginDto } from "./dto/login.dto";
 export class AuthService {
   constructor(
     private readonly usersService: UsersService,
-    private readonly quotaService: QuotaService,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -20,15 +18,14 @@ export class AuthService {
     const user = await this.usersService.create({
       email: dto.email,
       name: dto.name,
-      password: passwordHash,
+      passwordHash,
     });
-    await this.quotaService.createInitialAccount(user.id);
     return this.issueToken(user.id, user.email);
   }
 
   async login(dto: LoginDto) {
     const user = await this.usersService.findByEmail(dto.email);
-    if (!user || !(await bcrypt.compare(dto.password, user.password))) {
+    if (!user || !user.passwordHash || !(await bcrypt.compare(dto.password, user.passwordHash))) {
       throw new UnauthorizedException("Invalid credentials");
     }
     return this.issueToken(user.id, user.email);

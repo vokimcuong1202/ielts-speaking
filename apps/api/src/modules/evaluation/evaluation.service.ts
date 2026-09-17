@@ -1,21 +1,22 @@
 import { Inject, Injectable } from "@nestjs/common";
-import { PrismaService } from "../../infrastructure/database/prisma.service";
+import { AttemptsRepository } from "../practice-sessions/attempts.repository";
 import { EVALUATION_PROVIDER, EvaluationProvider } from "./evaluation.provider";
 
 @Injectable()
 export class EvaluationService {
+  readonly providerName: string;
+
   constructor(
     @Inject(EVALUATION_PROVIDER) private readonly provider: EvaluationProvider,
-    private readonly prisma: PrismaService,
-  ) {}
+    private readonly attemptsRepository: AttemptsRepository,
+  ) {
+    this.providerName = provider.name;
+  }
 
-  async evaluateSession(sessionId: string, transcript: string, exercisePrompt: string) {
-    const result = await this.provider.evaluate(transcript, exercisePrompt);
-
-    await this.prisma.evaluation.create({
-      data: { sessionId, ...result },
-    });
-
-    return result;
+  async evaluateAttempt(attemptId: string, transcript: string, questionText: string) {
+    const { result, usageTokens } = await this.provider.evaluate(transcript, questionText);
+    await this.attemptsRepository.createScore(attemptId, result);
+    await this.attemptsRepository.markCompleted(attemptId);
+    return { result, usageTokens };
   }
 }

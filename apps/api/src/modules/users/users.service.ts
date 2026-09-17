@@ -6,7 +6,7 @@ import { CreateUserDto } from "./dto/create-user.dto";
 export class UsersService {
   constructor(private readonly usersRepository: UsersRepository) {}
 
-  create(dto: CreateUserDto & { password: string }) {
+  create(dto: CreateUserDto & { passwordHash: string }) {
     return this.usersRepository.create(dto);
   }
 
