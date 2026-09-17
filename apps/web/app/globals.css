@@ -1,0 +1,54 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Brand teal scale — primary actions, active nav, mic/record affordances */
+  --color-brand-50: #eaf4f3;
+  --color-brand-100: #d3e8e6;
+  --color-brand-200: #a9d1cd;
+  --color-brand-300: #7cb9b4;
+  --color-brand-400: #4e9691;
+  --color-brand-500: #2f7a7e;
+  --color-brand-600: #24686c;
+  --color-brand-700: #1b5458;
+  --color-brand-800: #154548;
+  --color-brand-900: #103739;
+
+  /* Neutral surfaces */
+  --color-page: #eef3f5;
+  --color-surface: #ffffff;
+  --color-border: #e3e9ec;
+  --color-border-strong: #cfd8dc;
+
+  /* Text */
+  --color-ink-900: #1e2a32;
+  --color-ink-700: #3d4a52;
+  --color-ink-500: #6b7b83;
+  --color-ink-400: #94a3ab;
+
+  /* Semantic accents */
+  --color-success-bg: #dcf5e6;
+  --color-success-text: #16794c;
+  --color-warning-bg: #fdecc8;
+  --color-warning-text: #92610a;
+  --color-hot-bg: #ffe4d6;
+  --color-hot-text: #c2410c;
+  --color-flame-bg: #fdecc8;
+  --color-flame: #e8780c;
+
+  /* Heatmap intensity scale (0 = no activity → 4 = high activity) */
+  --color-heat-0: #e7edef;
+  --color-heat-1: #bfdbd8;
+  --color-heat-2: #8cc0bb;
+  --color-heat-3: #4e9691;
+  --color-heat-4: #1b5458;
+
+  --shadow-card: 0 1px 2px rgba(16, 55, 57, 0.04), 0 8px 24px -12px rgba(16, 55, 57, 0.12);
+  --radius-card: 1rem;
+}
+
+body {
+  background-color: var(--color-page);
+  color: var(--color-ink-900);
+}
