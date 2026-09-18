@@ -24,7 +24,7 @@ export function ForecastQuestionCard({ question, isSelected, onSelect }: Forecas
       onClick={() => onSelect(question.id)}
       className={cn(
         "flex cursor-pointer flex-wrap items-start justify-between gap-4 rounded-2xl border p-5 transition-colors",
-        isSelected ? "border-brand-500 bg-brand-50/40" : "border-border bg-surface hover:border-brand-200"
+        isSelected ? "border-brand-500 bg-brand-50/50" : "border-border bg-surface hover:border-brand-200"
       )}
     >
       <div className="min-w-0 flex-1">
