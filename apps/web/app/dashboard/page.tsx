@@ -1,6 +1,7 @@
 "use client";
 
 import { AppShell } from "@/components/layout/app-shell";
+import { LoadingIndicator } from "@/components/layout/loading-screen";
 import { PageHeader } from "@/components/dashboard/page-header";
 import { TodaySessionCard } from "@/components/dashboard/today-session-card";
 import { TestScoreCard } from "@/components/dashboard/test-score-card";
@@ -15,14 +16,16 @@ export default function DashboardPage() {
 
   if (isLoading || !data) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-page">
-        <p className="text-sm text-ink-400">Đang tải…</p>
-      </div>
+      <AppShell>
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <LoadingIndicator />
+        </div>
+      </AppShell>
     );
   }
 
   return (
-    <AppShell userName={data.user.name} sidebarProgress={data.sidebarProgress}>
+    <AppShell>
       <PageHeader user={data.user} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">

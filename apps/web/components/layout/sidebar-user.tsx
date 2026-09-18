@@ -4,7 +4,7 @@ export function SidebarUser({ name }: { name: string }) {
   const initial = name.charAt(0).toUpperCase();
 
   return (
-    <button className="flex w-full items-center gap-2.5 rounded-xl px-1 py-1.5 text-left hover:bg-page">
+    <button className="flex w-full cursor-pointer items-center gap-2.5 rounded-xl px-1 py-1.5 text-left hover:bg-page">
       <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-brand-100 text-sm font-bold text-brand-700">
         {initial}
       </span>

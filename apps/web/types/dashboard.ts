@@ -84,11 +84,6 @@ export interface VocabularyOfTheDay {
   relatedWords: VocabularyRelatedWord[];
 }
 
-export interface SidebarProgress {
-  completed: number;
-  total: number;
-}
-
 export interface DashboardHomeData {
   user: UserProfile;
   todaySession: TodaySession;
@@ -97,5 +92,4 @@ export interface DashboardHomeData {
   weekStreak: WeekStreak;
   forecastQuestions: ForecastQuestion[];
   vocabulary: VocabularyOfTheDay;
-  sidebarProgress: SidebarProgress;
 }

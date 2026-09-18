@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Check } from "lucide-react";
 import { cn } from "@/lib/cn";
 import type { SpeakingPartStep } from "@/types/dashboard";
@@ -8,17 +9,21 @@ const stepNumber: Record<SpeakingPartStep["id"], number> = {
   part3: 3,
 };
 
+const setupLinkablePartIds: SpeakingPartStep["id"][] = ["part1", "part3"];
+
 export function PartStep({ step }: { step: SpeakingPartStep }) {
   const isActive = step.status === "active";
   const isDone = step.status === "done";
+  const isLinkable = setupLinkablePartIds.includes(step.id);
 
-  return (
+  const card = (
     <div
       className={cn(
-        "flex flex-1 items-center gap-3 rounded-xl border px-4 py-3",
+        "flex flex-1 items-center gap-3 rounded-xl border px-4 py-3 transition-colors",
         isActive && "border-brand-600 bg-brand-600",
         isDone && "border-border bg-surface",
-        step.status === "locked" && "border-border bg-page"
+        step.status === "locked" && "border-border bg-page",
+        isLinkable && "cursor-pointer hover:border-brand-400"
       )}
     >
       <span
@@ -39,4 +44,14 @@ export function PartStep({ step }: { step: SpeakingPartStep }) {
       </div>
     </div>
   );
+
+  if (isLinkable) {
+    return (
+      <Link href={`/practice/setup?part=${step.id}`} className="contents">
+        {card}
+      </Link>
+    );
+  }
+
+  return card;
 }

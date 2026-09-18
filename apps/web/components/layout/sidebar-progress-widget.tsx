@@ -1,5 +1,5 @@
 import { ProgressRing } from "@/components/ui/progress-ring";
-import type { SidebarProgress } from "@/types/dashboard";
+import type { SidebarProgress } from "@/types/user";
 
 export function SidebarProgressWidget({ progress }: { progress: SidebarProgress }) {
   return (

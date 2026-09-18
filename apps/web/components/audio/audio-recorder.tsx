@@ -13,5 +13,9 @@ export function AudioRecorder({ onRecorded }: { onRecorded: (blob: Blob) => void
     }
   };
 
-  return <button onClick={handleClick}>{isRecording ? "Stop recording" : "Start recording"}</button>;
+  return (
+    <button className="cursor-pointer" onClick={handleClick}>
+      {isRecording ? "Stop recording" : "Start recording"}
+    </button>
+  );
 }

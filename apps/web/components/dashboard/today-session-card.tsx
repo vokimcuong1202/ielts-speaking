@@ -22,7 +22,7 @@ export function TodaySessionCard({ session }: { session: TodaySession }) {
       <div className="mt-5 flex flex-col items-center gap-5 border-b border-border pb-6 text-center sm:flex-row sm:items-center sm:text-left">
         <button
           type="button"
-          className="flex h-32 w-32 shrink-0 flex-col items-center justify-center gap-1.5 rounded-full bg-brand-800 text-white shadow-lg transition-colors hover:bg-brand-900"
+          className="flex h-32 w-32 shrink-0 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-full bg-brand-800 text-white shadow-lg transition-colors hover:bg-brand-900"
         >
           <Mic className="h-7 w-7" strokeWidth={2} />
           <span className="px-3 text-[10px] font-bold leading-tight">

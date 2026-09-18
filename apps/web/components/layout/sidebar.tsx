@@ -1,11 +1,27 @@
+"use client";
+
+import { usePathname } from "next/navigation";
 import { BookMarked, Headphones, Home, LineChart, Sparkles } from "lucide-react";
 import { SidebarNavItem } from "./sidebar-nav-item";
 import { SidebarProgressWidget } from "./sidebar-progress-widget";
 import { SidebarProCard } from "./sidebar-pro-card";
 import { SidebarUser } from "./sidebar-user";
-import type { SidebarProgress } from "@/types/dashboard";
+import type { SidebarProgress } from "@/types/user";
+
+const primaryNavItems = [
+  { icon: Home, label: "Trang chủ", href: "/dashboard" },
+  { icon: Headphones, label: "Thi thử", href: "/thi-thu" },
+  { icon: Sparkles, label: "Luyện Forecast", href: "/forecast" },
+];
+
+const secondaryNavItems = [
+  { icon: BookMarked, label: "Sổ từ vựng", href: "/vocabulary" },
+  { icon: LineChart, label: "Tiến bộ", href: "/progress" },
+];
 
 export function Sidebar({ userName, progress }: { userName: string; progress: SidebarProgress }) {
+  const pathname = usePathname();
+
   return (
     <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col justify-between border-r border-border bg-surface px-4 py-5">
       <div>
@@ -17,16 +33,17 @@ export function Sidebar({ userName, progress }: { userName: string; progress: Si
         </div>
 
         <nav className="mt-8 flex flex-col gap-1">
-          <SidebarNavItem icon={Home} label="Trang chủ" active />
-          <SidebarNavItem icon={Headphones} label="Thi thử" />
-          <SidebarNavItem icon={Sparkles} label="Luyện Forecast" />
+          {primaryNavItems.map((item) => (
+            <SidebarNavItem key={item.href} {...item} active={pathname.startsWith(item.href)} />
+          ))}
         </nav>
 
         <div className="my-4 border-t border-border" />
 
         <nav className="flex flex-col gap-1">
-          <SidebarNavItem icon={BookMarked} label="Sổ từ vựng" />
-          <SidebarNavItem icon={LineChart} label="Tiến bộ" />
+          {secondaryNavItems.map((item) => (
+            <SidebarNavItem key={item.href} {...item} active={pathname.startsWith(item.href)} />
+          ))}
         </nav>
       </div>
 

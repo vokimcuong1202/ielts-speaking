@@ -20,7 +20,7 @@ export function ForecastPracticeCard({ questions }: { questions: ForecastQuestio
           <button
             key={part}
             type="button"
-            className="flex items-center gap-1 rounded-full border border-border-strong px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-ink-700 hover:bg-page"
+            className="flex cursor-pointer items-center gap-1 rounded-full border border-border-strong px-3 py-1.5 text-xs font-semibold uppercase tracking-wide text-ink-700 hover:bg-page"
           >
             {part}
             <ArrowRight className="h-3.5 w-3.5" strokeWidth={2} />
