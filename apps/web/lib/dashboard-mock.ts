@@ -33,11 +33,17 @@ function buildHeatmap(): HeatmapData {
 
       const roll = random();
       const level = roll < 0.32 ? 0 : roll < 0.55 ? 1 : roll < 0.74 ? 2 : roll < 0.9 ? 3 : 4;
+      const sessionCount =
+        level === 0 ? 0 : level === 1 ? 1 : level === 2 ? 2 : level === 3 ? 3 + Math.floor(random() * 2) : 5 + Math.floor(random() * 3);
 
       totalDays += 1;
       if (level > 0) activeDays += 1;
 
-      days.push({ date: date.toISOString().slice(0, 10), level: level as HeatmapDay["level"] });
+      days.push({
+        date: date.toISOString().slice(0, 10),
+        level: level as HeatmapDay["level"],
+        sessionCount,
+      });
     }
     weeks.push(days);
   }
@@ -67,11 +73,28 @@ export function getDashboardMockData(): DashboardHomeData {
       estimatedMinutes: 4,
       title: "Bắt đầu buổi tập nói",
       description: "Ghi âm trực tiếp — AI chấm band ngay sau khi bạn nói xong.",
-      tip: "Part 2: 1 phút chuẩn bị, 2 phút nói — đúng nhịp phòng thi.",
       parts: [
-        { id: "part1", label: "Part 1", status: "done", band: 6.5 },
-        { id: "part2", label: "Part 2", status: "active", helperText: "đang chờ bạn" },
-        { id: "part3", label: "Part 3", status: "locked", helperText: "chưa mở" },
+        {
+          id: "part1",
+          label: "Part 1",
+          status: "done",
+          band: 6.5,
+          tip: "Part 1: Câu hỏi cá nhân, trả lời 2-3 câu là đủ - tự nhiên hơn học thuộc.",
+        },
+        {
+          id: "part2",
+          label: "Part 2",
+          status: "active",
+          helperText: "đang chờ bạn",
+          tip: "Part 2: 1 phút chuẩn bị, 2 phút nói — đúng nhịp phòng thi.",
+        },
+        {
+          id: "part3",
+          label: "Part 3",
+          status: "locked",
+          helperText: "chưa mở",
+          tip: "Part 3: Nêu ý kiến rồi giải thích vì sao - giám khảo chấm lập luận.",
+        },
       ],
     },
     testScore: {

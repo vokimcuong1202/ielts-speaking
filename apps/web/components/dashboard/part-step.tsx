@@ -11,13 +11,27 @@ const stepNumber: Record<SpeakingPartStep["id"], number> = {
 
 const setupLinkablePartIds: SpeakingPartStep["id"][] = ["part1", "part3"];
 
-export function PartStep({ step }: { step: SpeakingPartStep }) {
+export function PartStep({
+  step,
+  onHoverChange,
+}: {
+  step: SpeakingPartStep;
+  onHoverChange?: (active: boolean) => void;
+}) {
   const isActive = step.status === "active";
   const isDone = step.status === "done";
   const isLinkable = setupLinkablePartIds.includes(step.id);
 
+  const hoverProps = onHoverChange && {
+    onMouseEnter: () => onHoverChange(true),
+    onMouseLeave: () => onHoverChange(false),
+    onFocus: () => onHoverChange(true),
+    onBlur: () => onHoverChange(false),
+  };
+
   const card = (
     <div
+      {...hoverProps}
       className={cn(
         "flex flex-1 items-center gap-3 rounded-xl border px-4 py-3 transition-colors",
         isActive && "border-brand-600 bg-brand-600",

@@ -22,7 +22,7 @@ export function TestTypeTabs() {
           onClick={() => setActiveTab(tab.id)}
           className={cn(
             "cursor-pointer rounded-xl px-4 py-2 text-sm font-semibold transition-colors",
-            activeTab === tab.id ? "bg-brand-700 text-white" : "border border-border-strong text-ink-700 hover:bg-page"
+            activeTab === tab.id ? "bg-brand-500 text-white" : "border border-border-strong text-ink-700 hover:bg-page"
           )}
         >
           {tab.label}

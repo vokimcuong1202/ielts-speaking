@@ -5,9 +5,7 @@ import type { WeekStreak } from "@/types/dashboard";
 
 export function WeekStreakCard({ streak }: { streak: WeekStreak }) {
   return (
-    <Card className="flex w-full shrink-0 flex-col p-6 lg:w-64">
-      <h3 className="text-lg font-bold text-ink-900">Tuần này</h3>
-
+    <Card className="flex w-full shrink-0 flex-col items-center p-6 text-center lg:w-64">
       <div className="mt-4 flex items-center gap-3">
         <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-flame-bg text-flame">
           <Flame className="h-6 w-6" fill="currentColor" strokeWidth={0} />

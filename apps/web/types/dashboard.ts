@@ -14,6 +14,7 @@ export interface SpeakingPartStep {
   status: SpeakingPartStatus;
   band?: number;
   helperText?: string;
+  tip: string;
 }
 
 export interface TodaySession {
@@ -23,7 +24,6 @@ export interface TodaySession {
   estimatedMinutes: number;
   title: string;
   description: string;
-  tip: string;
   parts: SpeakingPartStep[];
 }
 
@@ -40,6 +40,7 @@ export interface TestScoreSummary {
 export interface HeatmapDay {
   date: string;
   level: 0 | 1 | 2 | 3 | 4;
+  sessionCount: number;
 }
 
 export interface HeatmapMonthLabel {
