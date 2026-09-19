@@ -1,12 +1,38 @@
-import { IsIn, IsOptional, IsString } from "class-validator";
+import { IsBoolean, IsIn, IsInt, IsOptional, IsString, Max, Min } from "class-validator";
+import { BigIntId } from "../../../common/decorators/bigint-id.decorator";
+import { IELTS_PARTS, IeltsPartValue } from "../../topic-groups/dto/create-topic-group.dto";
 
-const SESSION_TYPES = ["part1_drill", "part2_drill", "part3_drill", "mock_test"] as const;
+export const SESSION_MODES = ["practice_question", "practice_topic", "mock_part", "mock_full"] as const;
+export type SessionModeValue = (typeof SESSION_MODES)[number];
 
 export class CreateSessionDto {
-  @IsIn(SESSION_TYPES)
-  type: (typeof SESSION_TYPES)[number];
+  @IsIn(SESSION_MODES)
+  mode: SessionModeValue;
+
+  /** Omit for mock_full. */
+  @IsOptional()
+  @IsIn(IELTS_PARTS)
+  part?: IeltsPartValue;
+
+  @IsOptional()
+  @BigIntId()
+  forecastSetId?: bigint;
+
+  @IsOptional()
+  @BigIntId()
+  topicGroupId?: bigint;
 
   @IsOptional()
   @IsString()
-  topicGroupId?: string;
+  voiceCode?: string;
+
+  @IsOptional()
+  @IsInt()
+  @Min(2)
+  @Max(9)
+  questionCount?: number;
+
+  @IsOptional()
+  @IsBoolean()
+  hideQuestion?: boolean;
 }

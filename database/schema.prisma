@@ -1,3 +1,13 @@
+// SpeakPrep schema. Mirrors the PostgreSQL DDL in
+// migrations/20260919000000_speakprep_schema/migration.sql.
+//
+// Things Prisma cannot express and that live only in the SQL:
+//   * CHECK constraints (band ranges, part2/part3 rules, ...)
+//   * partial unique indexes (forecast_sets.is_current, mock_test_scores per part)
+//   * the GIN tsvector index on vocab_items.term
+//   * the views v_band_history / v_forecast_board / v_vocab_due_today
+//     (the API re-implements them with Prisma queries)
+
 generator client {
   provider        = "prisma-client-js"
   output          = "./generated/client"
@@ -7,358 +17,839 @@ generator client {
 datasource db {
   provider   = "postgresql"
   url        = env("DATABASE_URL")
-  extensions = [pgcrypto]
+  extensions = [citext(schema: "public"), pgcrypto]
 }
 
-// ---------------------------------------------------------------------
-// ENUMS
-// ---------------------------------------------------------------------
+model AiConversation {
+  id            BigInt      @id @default(autoincrement())
+  userId        String      @map("user_id") @db.Uuid
+  attemptId     BigInt?     @map("attempt_id")
+  questionId    BigInt?     @map("question_id")
+  createdAt     DateTime    @default(now()) @map("created_at") @db.Timestamptz(6)
+  lastMessageAt DateTime?   @map("last_message_at") @db.Timestamptz(6)
+  attempt       Attempt?    @relation(fields: [attemptId], references: [id], onUpdate: NoAction)
+  question      Question?   @relation(fields: [questionId], references: [id], onUpdate: NoAction)
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  aiMessages    AiMessage[]
 
-enum UserRole {
-  student
-  teacher
-  admin
-
-  @@map("user_role")
+  @@index([userId, lastMessageAt(sort: Desc)])
+  @@map("ai_conversations")
 }
 
-enum SubscriptionStatus {
-  active
-  expired
-  canceled
-  past_due
+model AiMessage {
+  id             BigInt         @id @default(autoincrement())
+  conversationId BigInt         @map("conversation_id")
+  role           AiRole
+  body           String
+  suggestedChips String[]       @map("suggested_chips")
+  tokens         Int?
+  createdAt      DateTime       @default(now()) @map("created_at") @db.Timestamptz(6)
+  aiConversation AiConversation @relation(fields: [conversationId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
-  @@map("subscription_status")
+  @@index([conversationId, createdAt])
+  @@map("ai_messages")
 }
 
-enum QuestionPart {
-  part1
-  part2
-  part3
+model AttemptError {
+  id              BigInt     @id @default(autoincrement())
+  attemptId       BigInt     @map("attempt_id")
+  errorTypeId     BigInt?    @map("error_type_id")
+  seqNo           Int        @map("seq_no")
+  atMs            Int?       @map("at_ms")
+  wrongText       String?    @map("wrong_text")
+  correctText     String?    @map("correct_text")
+  sentenceEn      String?    @map("sentence_en")
+  explanationVi   String?    @map("explanation_vi")
+  fixedAudioUrl   String?    @map("fixed_audio_url")
+  savedToNotebook Boolean    @default(false) @map("saved_to_notebook")
+  attempt         Attempt    @relation(fields: [attemptId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  errorType       ErrorType? @relation(fields: [errorTypeId], references: [id], onDelete: NoAction, onUpdate: NoAction)
 
-  @@map("question_part")
+  @@unique([attemptId, seqNo])
+  @@index([errorTypeId])
+  @@map("attempt_errors")
+}
+
+model AttemptLike {
+  attemptId     BigInt        @map("attempt_id")
+  userId        String        @map("user_id") @db.Uuid
+  createdAt     DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
+  publicAttempt PublicAttempt @relation(fields: [attemptId], references: [attemptId], onDelete: Cascade, onUpdate: NoAction)
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([attemptId, userId])
+  @@map("attempt_likes")
+}
+
+model AttemptRewrite {
+  attemptId BigInt  @id @map("attempt_id")
+  labelVi   String  @default("Nói ngắn lại") @map("label_vi")
+  bodyEn    String  @map("body_en")
+  noteVi    String? @map("note_vi")
+  audioUrl  String? @map("audio_url")
+  attempt   Attempt @relation(fields: [attemptId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("attempt_rewrites")
+}
+
+model AttemptScore {
+  attemptId BigInt        @map("attempt_id")
+  criterion BandCriterion
+  band      Decimal       @db.Decimal(2, 1)
+  commentVi String?       @map("comment_vi")
+  attempt   Attempt       @relation(fields: [attemptId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([attemptId, criterion])
+  @@map("attempt_scores")
+}
+
+model AttemptTranscriptSpan {
+  id          BigInt  @id @default(autoincrement())
+  attemptId   BigInt  @map("attempt_id")
+  charStart   Int     @map("char_start")
+  charEnd     Int     @map("char_end")
+  kind        String
+  text        String
+  replacement String?
+  atMs        Int?    @map("at_ms")
+  attempt     Attempt @relation(fields: [attemptId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([attemptId, charStart])
+  @@map("attempt_transcript_spans")
+}
+
+model Attempt {
+  id                     BigInt                  @id @default(autoincrement())
+  userId                 String                  @map("user_id") @db.Uuid
+  sessionId              BigInt?                 @map("session_id")
+  questionId             BigInt                  @map("question_id")
+  mockTestId             BigInt?                 @map("mock_test_id")
+  attemptNo              Int                     @default(1) @map("attempt_no")
+  status                 AttemptStatus           @default(uploaded)
+  invalidReason          InvalidReason?          @map("invalid_reason")
+  audioUrl               String?                 @map("audio_url")
+  durationMs             Int?                    @map("duration_ms")
+  questionRevealed       Boolean                 @default(false) @map("question_revealed")
+  transcript             String?
+  bandOverall            Decimal?                @map("band_overall") @db.Decimal(2, 1)
+  wordsPerMin            Int?                    @map("words_per_min")
+  fillerCount            Int?                    @map("filler_count")
+  recordedAt             DateTime                @default(now()) @map("recorded_at") @db.Timestamptz(6)
+  scoredAt               DateTime?               @map("scored_at") @db.Timestamptz(6)
+  aiConversations        AiConversation[]
+  attemptErrors          AttemptError[]
+  attemptRewrite         AttemptRewrite?
+  attemptScores          AttemptScore[]
+  attemptTranscriptSpans AttemptTranscriptSpan[]
+  mockTest               MockTest?               @relation(fields: [mockTestId], references: [id], onUpdate: NoAction, map: "attempts_mock_test_fk")
+  question               Question                @relation(fields: [questionId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  session                PracticeSession?        @relation(fields: [sessionId], references: [id], onUpdate: NoAction)
+  user                   User                    @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  publicAttempt          PublicAttempt?
+  userQuestionProgress   UserQuestionProgress[]
+  userVocab              UserVocab[]
+
+  @@index([userId, questionId, attemptNo])
+  @@index([userId, recordedAt(sort: Desc)])
+  @@map("attempts")
+}
+
+model DailyVocabPick {
+  userId      String    @map("user_id") @db.Uuid
+  pickDate    DateTime  @map("pick_date") @db.Date
+  vocabItemId BigInt    @map("vocab_item_id")
+  isHero      Boolean   @default(false) @map("is_hero")
+  sortOrder   Int       @default(0) @map("sort_order")
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  vocabItem   VocabItem @relation(fields: [vocabItemId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([userId, pickDate, vocabItemId])
+  @@map("daily_vocab_picks")
+}
+
+model ErrorType {
+  id             BigInt          @id @default(autoincrement())
+  slug           String          @unique
+  criterion      BandCriterion   @default(grammar)
+  labelVi        String          @map("label_vi")
+  labelEn        String?         @map("label_en")
+  familyVi       String?         @map("family_vi")
+  explainerVi    String?         @map("explainer_vi")
+  attemptErrors  AttemptError[]
+  userErrorStats UserErrorStat[]
+
+  @@map("error_types")
+}
+
+model ExaminerVoice {
+  code             String            @id
+  name             String
+  gender           VoiceGender
+  accent           String
+  sampleUrl        String?           @map("sample_url")
+  isActive         Boolean           @default(true) @map("is_active")
+  mockTests        MockTest[]
+  practiceSessions PracticeSession[]
+
+  @@map("examiner_voices")
+}
+
+model Follow {
+  followerId String   @map("follower_id") @db.Uuid
+  followeeId String   @map("followee_id") @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
+  followee   User     @relation("follows_followee_idTousers", fields: [followeeId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  follower   User     @relation("follows_follower_idTousers", fields: [followerId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([followerId, followeeId])
+  @@map("follows")
+}
+
+model ForecastQuestion {
+  forecastSetId  BigInt       @map("forecast_set_id")
+  questionId     BigInt       @map("question_id")
+  flag           ForecastFlag @default(standard)
+  appearances30d Int          @default(0) @map("appearances_30d")
+  probability    Decimal?     @db.Decimal(5, 2)
+  enteredSetOn   DateTime?    @map("entered_set_on") @db.Date
+  sortOrder      Int          @default(0) @map("sort_order")
+  forecastSet    ForecastSet  @relation(fields: [forecastSetId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  question       Question     @relation(fields: [questionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([forecastSetId, questionId])
+  @@index([forecastSetId, flag, probability(sort: Desc)])
+  @@map("forecast_questions")
+}
+
+model ForecastSet {
+  id                BigInt              @id @default(autoincrement())
+  slug              String              @unique
+  title             String
+  quarterLabel      String              @map("quarter_label")
+  windowStart       DateTime            @map("window_start") @db.Date
+  windowEnd         DateTime            @map("window_end") @db.Date
+  description       String?
+  isCurrent         Boolean             @default(false) @map("is_current")
+  publishedAt       DateTime?           @map("published_at") @db.Timestamptz(6)
+  forecastQuestions ForecastQuestion[]
+  practiceSessions  PracticeSession[]
+  userTopicProgress UserTopicProgress[]
+
+  @@map("forecast_sets")
+}
+
+model MockTestScore {
+  id         BigInt        @id @default(autoincrement())
+  mockTestId BigInt        @map("mock_test_id")
+  part       IeltsPart?
+  criterion  BandCriterion
+  band       Decimal       @db.Decimal(2, 1)
+  commentVi  String?       @map("comment_vi")
+  mockTest   MockTest      @relation(fields: [mockTestId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("mock_test_scores")
+}
+
+model MockTest {
+  id             BigInt           @id @default(autoincrement())
+  userId         String           @map("user_id") @db.Uuid
+  sessionId      BigInt?          @map("session_id")
+  label          String?
+  voiceCode      String?          @map("voice_code")
+  status         MockStatus       @default(in_progress)
+  invalidReason  InvalidReason?   @map("invalid_reason")
+  bandOverall    Decimal?         @map("band_overall") @db.Decimal(2, 1)
+  deltaPrev      Decimal?         @map("delta_prev") @db.Decimal(3, 1)
+  durationMs     Int?             @map("duration_ms")
+  retakeOfId     BigInt?          @map("retake_of_id")
+  takenAt        DateTime         @default(now()) @map("taken_at") @db.Timestamptz(6)
+  scoredAt       DateTime?        @map("scored_at") @db.Timestamptz(6)
+  summaryVi      String?          @map("summary_vi")
+  attempts       Attempt[]
+  mockTestScores MockTestScore[]
+  retakeOf       MockTest?        @relation("mock_testsTomock_tests", fields: [retakeOfId], references: [id], onUpdate: NoAction)
+  retakes        MockTest[]       @relation("mock_testsTomock_tests")
+  session        PracticeSession? @relation(fields: [sessionId], references: [id], onUpdate: NoAction)
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  examinerVoice  ExaminerVoice?   @relation(fields: [voiceCode], references: [code], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([retakeOfId])
+  @@index([userId, takenAt(sort: Desc)])
+  @@map("mock_tests")
+}
+
+model Plan {
+  code               PlanCode       @id
+  name               String
+  priceVnd           Int            @default(0) @map("price_vnd")
+  billingPeriod      String         @default("month") @map("billing_period")
+  unlimitedSpeaking  Boolean        @default(false) @map("unlimited_speaking")
+  dailySpeakingTurns Int?           @map("daily_speaking_turns")
+  dailyAiScorings    Int?           @map("daily_ai_scorings")
+  features           Json           @default("{}")
+  subscriptions      Subscription[]
+
+  @@map("plans")
+}
+
+model PracticeDay {
+  userId        String   @map("user_id") @db.Uuid
+  day           DateTime @db.Date
+  attemptsCount Int      @default(0) @map("attempts_count")
+  speakingMs    BigInt   @default(0) @map("speaking_ms")
+  intensity     Int      @default(0) @db.SmallInt
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([userId, day])
+  @@map("practice_days")
+}
+
+model PracticeSession {
+  id            BigInt         @id @default(autoincrement())
+  userId        String         @map("user_id") @db.Uuid
+  mode          SessionMode
+  part          IeltsPart?
+  forecastSetId BigInt?        @map("forecast_set_id")
+  topicGroupId  BigInt?        @map("topic_group_id")
+  voiceCode     String?        @map("voice_code")
+  questionCount Int?           @map("question_count")
+  hideQuestion  Boolean        @default(true) @map("hide_question")
+  startedAt     DateTime       @default(now()) @map("started_at") @db.Timestamptz(6)
+  finishedAt    DateTime?      @map("finished_at") @db.Timestamptz(6)
+  abandoned     Boolean        @default(false)
+  attempts      Attempt[]
+  mockTests     MockTest[]
+  forecastSet   ForecastSet?   @relation(fields: [forecastSetId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  topicGroup    TopicGroup?    @relation(fields: [topicGroupId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  examinerVoice ExaminerVoice? @relation(fields: [voiceCode], references: [code], onDelete: NoAction, onUpdate: NoAction)
+
+  @@index([userId, startedAt(sort: Desc)])
+  @@map("practice_sessions")
+}
+
+model PublicAttempt {
+  attemptId    BigInt        @id @map("attempt_id")
+  questionId   BigInt        @map("question_id")
+  userId       String        @map("user_id") @db.Uuid
+  bandOverall  Decimal       @map("band_overall") @db.Decimal(2, 1)
+  isoWeek      String        @map("iso_week")
+  rankInWeek   Int?          @map("rank_in_week")
+  likesCount   Int           @default(0) @map("likes_count")
+  publishedAt  DateTime      @default(now()) @map("published_at") @db.Timestamptz(6)
+  attemptLikes AttemptLike[]
+  attempt      Attempt       @relation(fields: [attemptId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  question     Question      @relation(fields: [questionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([questionId, isoWeek, bandOverall(sort: Desc)])
+  @@map("public_attempts")
+}
+
+model QuestionIdeaFrame {
+  id         BigInt   @id @default(autoincrement())
+  questionId BigInt   @map("question_id")
+  stepNo     Int      @map("step_no")
+  bodyVi     String   @map("body_vi")
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@unique([questionId, stepNo])
+  @@map("question_idea_frames")
+}
+
+model QuestionVocab {
+  questionId  BigInt    @map("question_id")
+  vocabItemId BigInt    @map("vocab_item_id")
+  bandTier    Int       @map("band_tier")
+  sortOrder   Int       @default(0) @map("sort_order")
+  isCore      Boolean   @default(false) @map("is_core")
+  question    Question  @relation(fields: [questionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  vocabItem   VocabItem @relation(fields: [vocabItemId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([questionId, vocabItemId, bandTier])
+  @@map("question_vocab")
+}
+
+model Question {
+  id                   BigInt                 @id @default(autoincrement())
+  part                 IeltsPart
+  slug                 String                 @unique
+  textEn               String                 @map("text_en")
+  topicGroupId         BigInt?                @map("topic_group_id")
+  parentQuestionId     BigInt?                @map("parent_question_id")
+  cueCardBullets       String[]               @map("cue_card_bullets")
+  prepSeconds          Int?                   @map("prep_seconds")
+  speakSeconds         Int?                   @map("speak_seconds")
+  promptAudioUrl       String?                @map("prompt_audio_url")
+  ipaHint              String?                @map("ipa_hint")
+  isActive             Boolean                @default(true) @map("is_active")
+  createdAt            DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  aiConversations      AiConversation[]
+  attempts             Attempt[]
+  forecastQuestions    ForecastQuestion[]
+  publicAttempts       PublicAttempt[]
+  questionIdeaFrames   QuestionIdeaFrame[]
+  questionVocab        QuestionVocab[]
+  parent               Question?              @relation("questionsToquestions", fields: [parentQuestionId], references: [id], onUpdate: NoAction)
+  followUps            Question[]             @relation("questionsToquestions")
+  topicGroup           TopicGroup?            @relation(fields: [topicGroupId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  sampleAnswers        SampleAnswer[]
+  userQuestionProgress UserQuestionProgress[]
+  userVocab            UserVocab[]
+
+  @@index([parentQuestionId])
+  @@index([part, topicGroupId])
+  @@map("questions")
+}
+
+model QuotaUsage {
+  userId    String    @map("user_id") @db.Uuid
+  usageDate DateTime  @map("usage_date") @db.Date
+  kind      QuotaKind
+  used      Int       @default(0)
+  allowance Int?
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([userId, usageDate, kind])
+  @@map("quota_usage")
+}
+
+model Report {
+  id         BigInt       @id @default(autoincrement())
+  reporterId String       @map("reporter_id") @db.Uuid
+  targetKind ReportTarget @map("target_kind")
+  targetId   BigInt       @map("target_id")
+  reason     String?
+  note       String?
+  status     String       @default("open")
+  createdAt  DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
+  resolvedAt DateTime?    @map("resolved_at") @db.Timestamptz(6)
+  user       User         @relation(fields: [reporterId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([targetKind, targetId, status])
+  @@map("reports")
+}
+
+model SampleAnswer {
+  id         BigInt   @id @default(autoincrement())
+  questionId BigInt   @map("question_id")
+  band       Decimal  @db.Decimal(2, 1)
+  bodyEn     String   @map("body_en")
+  notesVi    String?  @map("notes_vi")
+  audioUrl   String?  @map("audio_url")
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([questionId, band])
+  @@map("sample_answers")
+}
+
+model Subscription {
+  id               BigInt    @id @default(autoincrement())
+  userId           String    @map("user_id") @db.Uuid
+  planCode         PlanCode  @map("plan_code")
+  status           String    @default("active")
+  startedAt        DateTime  @default(now()) @map("started_at") @db.Timestamptz(6)
+  currentPeriodEnd DateTime? @map("current_period_end") @db.Timestamptz(6)
+  canceledAt       DateTime? @map("canceled_at") @db.Timestamptz(6)
+  plan             Plan      @relation(fields: [planCode], references: [code], onDelete: NoAction, onUpdate: NoAction)
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([userId, status])
+  @@map("subscriptions")
+}
+
+model TopicGroup {
+  id                BigInt              @id @default(autoincrement())
+  part              IeltsPart
+  slug              String
+  nameEn            String              @map("name_en")
+  nameVi            String?             @map("name_vi")
+  sortOrder         Int                 @default(0) @map("sort_order")
+  practiceSessions  PracticeSession[]
+  questions         Question[]
+  userTopicProgress UserTopicProgress[]
+
+  @@unique([part, slug])
+  @@map("topic_groups")
+}
+
+model UserErrorStat {
+  userId        String    @map("user_id") @db.Uuid
+  errorTypeId   BigInt    @map("error_type_id")
+  occurrences   Int       @default(0)
+  sampleWrong   String?   @map("sample_wrong")
+  sampleCorrect String?   @map("sample_correct")
+  lastSeenAt    DateTime? @map("last_seen_at") @db.Timestamptz(6)
+  windowTests   Int?      @map("window_tests")
+  errorType     ErrorType @relation(fields: [errorTypeId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([userId, errorTypeId])
+  @@map("user_error_stats")
+}
+
+model UserGoal {
+  userId               String    @id @map("user_id") @db.Uuid
+  targetBand           Decimal   @map("target_band") @db.Decimal(2, 1)
+  examDate             DateTime? @map("exam_date") @db.Date
+  weeklyTargetSessions Int       @default(3) @map("weekly_target_sessions")
+  updatedAt            DateTime  @default(now()) @map("updated_at") @db.Timestamptz(6)
+  user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("user_goals")
+}
+
+model UserQuestionProgress {
+  userId          String    @map("user_id") @db.Uuid
+  questionId      BigInt    @map("question_id")
+  attemptsCount   Int       @default(0) @map("attempts_count")
+  firstBand       Decimal?  @map("first_band") @db.Decimal(2, 1)
+  lastBand        Decimal?  @map("last_band") @db.Decimal(2, 1)
+  bestBand        Decimal?  @map("best_band") @db.Decimal(2, 1)
+  bandDelta       Decimal?  @map("band_delta") @db.Decimal(3, 1)
+  percentile      Int?
+  lastAttemptId   BigInt?   @map("last_attempt_id")
+  lastPracticedAt DateTime? @map("last_practiced_at") @db.Timestamptz(6)
+  isBookmarked    Boolean   @default(false) @map("is_bookmarked")
+  attempt         Attempt?  @relation(fields: [lastAttemptId], references: [id], onUpdate: NoAction)
+  question        Question  @relation(fields: [questionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([userId, questionId])
+  @@index([userId, lastPracticedAt(sort: Desc)])
+  @@map("user_question_progress")
+}
+
+model UserRecommendation {
+  id          BigInt    @id @default(autoincrement())
+  userId      String    @map("user_id") @db.Uuid
+  rank        Int
+  kind        String
+  bodyVi      String    @map("body_vi")
+  ctaLabelVi  String?   @map("cta_label_vi")
+  targetRef   Json      @default("{}") @map("target_ref")
+  createdAt   DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
+  dismissedAt DateTime? @map("dismissed_at") @db.Timestamptz(6)
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("user_recommendations")
+}
+
+model UserStats {
+  userId              String         @id @map("user_id") @db.Uuid
+  latestBand          Decimal?       @map("latest_band") @db.Decimal(2, 1)
+  firstBand           Decimal?       @map("first_band") @db.Decimal(2, 1)
+  mockTestsCount      Int            @default(0) @map("mock_tests_count")
+  speakingMsTotal     BigInt         @default(0) @map("speaking_ms_total")
+  speakingMsWeek      BigInt         @default(0) @map("speaking_ms_week")
+  forecastDoneCount   Int            @default(0) @map("forecast_done_count")
+  forecastAvgBand     Decimal?       @map("forecast_avg_band") @db.Decimal(2, 1)
+  bottleneckCriterion BandCriterion? @map("bottleneck_criterion")
+  bottleneckNoteVi    String?        @map("bottleneck_note_vi")
+  refreshedAt         DateTime       @default(now()) @map("refreshed_at") @db.Timestamptz(6)
+  user                User           @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("user_stats")
+}
+
+model UserStreak {
+  userId           String    @id @map("user_id") @db.Uuid
+  currentDays      Int       @default(0) @map("current_days")
+  longestDays      Int       @default(0) @map("longest_days")
+  currentStartedOn DateTime? @map("current_started_on") @db.Date
+  lastActiveDay    DateTime? @map("last_active_day") @db.Date
+  user             User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@map("user_streaks")
+}
+
+model UserTopicProgress {
+  userId            String      @map("user_id") @db.Uuid
+  topicGroupId      BigInt      @map("topic_group_id")
+  forecastSetId     BigInt      @map("forecast_set_id")
+  questionsTotal    Int         @default(0) @map("questions_total")
+  questionsAnswered Int         @default(0) @map("questions_answered")
+  avgBand           Decimal?    @map("avg_band") @db.Decimal(2, 1)
+  hasNewQuestion    Boolean     @default(false) @map("has_new_question")
+  lastPracticedAt   DateTime?   @map("last_practiced_at") @db.Timestamptz(6)
+  forecastSet       ForecastSet @relation(fields: [forecastSetId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  topicGroup        TopicGroup  @relation(fields: [topicGroupId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([userId, topicGroupId, forecastSetId])
+  @@map("user_topic_progress")
+}
+
+model UserVocab {
+  id               BigInt        @id @default(autoincrement())
+  userId           String        @map("user_id") @db.Uuid
+  vocabItemId      BigInt        @map("vocab_item_id")
+  source           VocabSource   @default(question_panel)
+  sourceQuestionId BigInt?       @map("source_question_id")
+  sourceAttemptId  BigInt?       @map("source_attempt_id")
+  savedAt          DateTime      @default(now()) @map("saved_at") @db.Timestamptz(6)
+  state            SrsState      @default(new)
+  ease             Decimal       @default(2.50) @db.Decimal(4, 2)
+  intervalDays     Int           @default(0) @map("interval_days")
+  reps             Int           @default(0)
+  lapses           Int           @default(0)
+  dueOn            DateTime      @default(dbgenerated("CURRENT_DATE")) @map("due_on") @db.Date
+  lastReviewedAt   DateTime?     @map("last_reviewed_at") @db.Timestamptz(6)
+  attempt          Attempt?      @relation(fields: [sourceAttemptId], references: [id], onUpdate: NoAction, map: "user_vocab_source_attempt_fk")
+  question         Question?     @relation(fields: [sourceQuestionId], references: [id], onUpdate: NoAction)
+  user             User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  vocabItem        VocabItem     @relation(fields: [vocabItemId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  vocabReviews     VocabReview[]
+
+  @@unique([userId, vocabItemId])
+  @@index([userId, sourceQuestionId])
+  @@map("user_vocab")
+}
+
+model User {
+  id                   String                 @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email                String                 @unique @db.Citext
+  passwordHash         String?                @map("password_hash")
+  displayName          String                 @map("display_name")
+  handle               String?                @unique @db.Citext
+  avatarUrl            String?                @map("avatar_url")
+  locale               String                 @default("vi")
+  timezone             String                 @default("Asia/Ho_Chi_Minh")
+  createdAt            DateTime               @default(now()) @map("created_at") @db.Timestamptz(6)
+  lastActiveAt         DateTime?              @map("last_active_at") @db.Timestamptz(6)
+  aiConversations      AiConversation[]
+  attemptLikes         AttemptLike[]
+  attempts             Attempt[]
+  dailyVocabPicks      DailyVocabPick[]
+  followers            Follow[]               @relation("follows_followee_idTousers")
+  following            Follow[]               @relation("follows_follower_idTousers")
+  mockTests            MockTest[]
+  practiceDays         PracticeDay[]
+  practiceSessions     PracticeSession[]
+  publicAttempts       PublicAttempt[]
+  quotaUsage           QuotaUsage[]
+  reports              Report[]
+  subscriptions        Subscription[]
+  userErrorStats       UserErrorStat[]
+  userGoal             UserGoal?
+  userQuestionProgress UserQuestionProgress[]
+  userRecommendations  UserRecommendation[]
+  userStats            UserStats?
+  userStreak           UserStreak?
+  userTopicProgress    UserTopicProgress[]
+  userVocab            UserVocab[]
+  vocabReviewSessions  VocabReviewSession[]
+
+  @@map("users")
+}
+
+/// This model contains an expression index which requires additional setup for migrations. Visit https://pris.ly/d/expression-indexes for more info.
+model VocabItem {
+  id              BigInt           @id @default(autoincrement())
+  term            String
+  ipa             String?
+  kind            VocabKind        @default(collocation)
+  meaningVi       String           @map("meaning_vi")
+  meaningEn       String?          @map("meaning_en")
+  exampleEn       String?          @map("example_en")
+  exampleVi       String?          @map("example_vi")
+  audioUrl        String?          @map("audio_url")
+  bandTier        Int?             @map("band_tier")
+  topicId         BigInt?          @map("topic_id")
+  createdAt       DateTime         @default(now()) @map("created_at") @db.Timestamptz(6)
+  dailyVocabPicks DailyVocabPick[]
+  questionVocab   QuestionVocab[]
+  userVocab       UserVocab[]
+  vocabTopic      VocabTopic?      @relation(fields: [topicId], references: [id], onUpdate: NoAction)
+
+  @@unique([term, meaningVi])
+  @@index([topicId, bandTier])
+  @@map("vocab_items")
+}
+
+model VocabReviewSession {
+  id           BigInt        @id @default(autoincrement())
+  userId       String        @map("user_id") @db.Uuid
+  startedAt    DateTime      @default(now()) @map("started_at") @db.Timestamptz(6)
+  finishedAt   DateTime?     @map("finished_at") @db.Timestamptz(6)
+  cardsTotal   Int           @default(0) @map("cards_total")
+  cardsKnown   Int           @default(0) @map("cards_known")
+  nextDueOn    DateTime?     @map("next_due_on") @db.Date
+  user         User          @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  vocabReviews VocabReview[]
+
+  @@map("vocab_review_sessions")
+}
+
+model VocabReview {
+  id                 BigInt             @id @default(autoincrement())
+  sessionId          BigInt             @map("session_id")
+  userVocabId        BigInt             @map("user_vocab_id")
+  rating             SrsRating
+  revealedMs         Int?               @map("revealed_ms")
+  reviewedAt         DateTime           @default(now()) @map("reviewed_at") @db.Timestamptz(6)
+  intervalBefore     Int?               @map("interval_before")
+  intervalAfter      Int?               @map("interval_after")
+  vocabReviewSession VocabReviewSession @relation(fields: [sessionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  userVocab          UserVocab          @relation(fields: [userVocabId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@index([userVocabId, reviewedAt(sort: Desc)])
+  @@map("vocab_reviews")
+}
+
+model VocabTopic {
+  id          BigInt      @id @default(autoincrement())
+  slug        String      @unique
+  nameEn      String      @map("name_en")
+  nameVi      String?     @map("name_vi")
+  blurbVi     String?     @map("blurb_vi")
+  commonParts IeltsPart[] @default([]) @map("common_parts")
+  sortOrder   Int         @default(0) @map("sort_order")
+  vocabItems  VocabItem[]
+
+  @@map("vocab_topics")
+}
+
+enum AiRole {
+  user
+  assistant
+  system
+
+  @@map("ai_role")
 }
 
 enum AttemptStatus {
-  pending_scoring
-  processing
-  completed
+  recording
+  uploaded
+  grading
+  scored
+  invalid
   failed
 
   @@map("attempt_status")
 }
 
-enum SessionType {
-  part1_drill
-  part2_drill
-  part3_drill
+enum BandCriterion {
+  fluency
+  lexical
+  grammar
+  pronunciation
+
+  @@map("band_criterion")
+}
+
+enum ForecastFlag {
+  hot
+  new
+  standard
+
+  @@map("forecast_flag")
+}
+
+enum IeltsPart {
+  part1
+  part2
+  part3
+
+  @@map("ielts_part")
+}
+
+enum InvalidReason {
+  no_speech
+  too_short
+  off_topic
+  mic_error
+  language_other
+
+  @@map("invalid_reason")
+}
+
+enum MockStatus {
+  in_progress
+  grading
+  scored
+  invalidated
+
+  @@map("mock_status")
+}
+
+enum PlanCode {
+  free
+  pro
+
+  @@map("plan_code")
+}
+
+enum QuotaKind {
+  speaking_turn
+  ai_scoring
+  ai_tutor_message
   mock_test
 
-  @@map("session_type")
+  @@map("quota_kind")
 }
 
-enum SessionStatus {
-  in_progress
-  completed
-  abandoned
+enum ReportTarget {
+  attempt
+  score
+  vocab_item
+  question
+  public_attempt
 
-  @@map("session_status")
+  @@map("report_target")
 }
 
-enum AiCallType {
-  stt
-  pronunciation
-  llm_scoring
+enum SessionMode {
+  practice_question
+  practice_topic
+  mock_part
+  mock_full
 
-  @@map("ai_call_type")
+  @@map("session_mode")
 }
 
-enum CorrectionType {
-  grammar
-  vocabulary
-  coherence
+enum SrsRating {
+  again
+  hard
+  good
+  easy
 
-  @@map("correction_type")
+  @@map("srs_rating")
 }
 
-// ---------------------------------------------------------------------
-// USERS
-// ---------------------------------------------------------------------
+enum SrsState {
+  new
+  learning
+  review
+  mastered
+  suspended
 
-model User {
-  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  email        String    @unique
-  passwordHash String?   @map("password_hash")
-  googleId     String?   @unique @map("google_id")
-  name         String
-  role         UserRole  @default(student)
-  targetBand   Decimal?  @map("target_band") @db.Decimal(2, 1)
-  examDate     DateTime? @map("exam_date") @db.Date
-  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  subscriptions    Subscription[]
-  practiceSessions PracticeSession[]
-  attempts         Attempt[]
-  streak           Streak?
-  aiUsageLogs      AiUsageLog[]
-  classesTaught    Class[]           @relation("ClassTeacher")
-  classMemberships ClassMember[]
-
-  @@index([role])
-  @@map("users")
+  @@map("srs_state")
 }
 
-// ---------------------------------------------------------------------
-// SUBSCRIPTIONS
-// ---------------------------------------------------------------------
+enum VocabKind {
+  word
+  collocation
+  idiom
+  phrasal_verb
+  sentence_frame
 
-model Subscription {
-  id                       String              @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId                   String              @map("user_id") @db.Uuid
-  status                   SubscriptionStatus  @default(expired)
-  provider                 String
-  providerCustomerId       String?             @map("provider_customer_id")
-  providerSubscriptionId   String?             @map("provider_subscription_id")
-  currentPeriodStart       DateTime?           @map("current_period_start") @db.Timestamptz(6)
-  currentPeriodEnd         DateTime?           @map("current_period_end") @db.Timestamptz(6)
-  canceledAt               DateTime?           @map("canceled_at") @db.Timestamptz(6)
-  createdAt                DateTime            @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt                DateTime            @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  // NOTE: a partial unique index (one active subscription per user) is
-  // created in the migration SQL as `uq_subscriptions_active_per_user`;
-  // Prisma's schema language cannot express a WHERE clause on @@unique.
-  @@index([userId])
-  @@index([status])
-  @@map("subscriptions")
+  @@map("vocab_kind")
 }
 
-// ---------------------------------------------------------------------
-// TOPIC GROUPS & QUESTIONS
-// ---------------------------------------------------------------------
+enum VocabSource {
+  question_panel
+  topic_library
+  mock_feedback
+  manual
+  daily_pick
 
-model TopicGroup {
-  id             String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  name           String
-  forecastSeason String?  @map("forecast_season")
-  isActive       Boolean  @default(true) @map("is_active")
-  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-
-  questions        Question[]
-  practiceSessions PracticeSession[]
-  assignments      Assignment[]
-
-  @@index([forecastSeason])
-  @@index([isActive])
-  @@map("topic_groups")
+  @@map("vocab_source")
 }
 
-model Question {
-  id           String       @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  topicGroupId String       @map("topic_group_id") @db.Uuid
-  part         QuestionPart
-  text         String
-  orderIndex   Int          @default(0) @map("order_index")
-  prepSeconds  Int?         @map("prep_seconds")
-  speakSeconds Int?         @map("speak_seconds")
-  createdAt    DateTime     @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt    DateTime     @updatedAt @map("updated_at") @db.Timestamptz(6)
+enum VoiceGender {
+  female
+  male
 
-  topicGroup TopicGroup @relation(fields: [topicGroupId], references: [id], onDelete: Cascade)
-  attempts   Attempt[]
-
-  // NOTE: the CHECK constraint (`chk_part2_timing`) and the partial unique
-  // index (`uq_one_part2_per_topic_group`, one Part 2 cue card per topic
-  // group) live in the migration SQL — not expressible in schema.prisma.
-  @@index([topicGroupId])
-  @@index([part])
-  @@map("questions")
-}
-
-// ---------------------------------------------------------------------
-// PRACTICE SESSIONS
-// ---------------------------------------------------------------------
-
-model PracticeSession {
-  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId       String        @map("user_id") @db.Uuid
-  type         SessionType
-  status       SessionStatus @default(in_progress)
-  topicGroupId String?       @map("topic_group_id") @db.Uuid
-  startedAt    DateTime      @default(now()) @map("started_at") @db.Timestamptz(6)
-  completedAt  DateTime?     @map("completed_at") @db.Timestamptz(6)
-
-  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  topicGroup TopicGroup? @relation(fields: [topicGroupId], references: [id])
-  attempts   Attempt[]
-  sessionScore SessionScore?
-
-  @@index([userId, startedAt(sort: Desc)])
-  @@index([status])
-  @@map("practice_sessions")
-}
-
-// ---------------------------------------------------------------------
-// ATTEMPTS
-// ---------------------------------------------------------------------
-
-model Attempt {
-  id                  String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  sessionId           String        @map("session_id") @db.Uuid
-  userId              String        @map("user_id") @db.Uuid
-  questionId          String        @map("question_id") @db.Uuid
-  status              AttemptStatus @default(pending_scoring)
-  rawAudioKey         String        @map("raw_audio_key")
-  normalizedAudioKey  String?       @map("normalized_audio_key")
-  durationSeconds     Decimal?      @map("duration_seconds") @db.Decimal(6, 2)
-  transcript          String?
-  fillerWordCount     Int?          @map("filler_word_count")
-  failureReason       String?       @map("failure_reason")
-  createdAt           DateTime      @default(now()) @map("created_at") @db.Timestamptz(6)
-  updatedAt           DateTime      @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  session     PracticeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-  user        User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  question    Question        @relation(fields: [questionId], references: [id])
-  score       Score?
-  aiUsageLogs AiUsageLog[]
-
-  @@index([userId, createdAt(sort: Desc)])
-  @@index([sessionId])
-  @@index([status])
-  @@map("attempts")
-}
-
-// ---------------------------------------------------------------------
-// SCORES (per attempt)
-// ---------------------------------------------------------------------
-
-model Score {
-  id                    String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  attemptId             String   @unique @map("attempt_id") @db.Uuid
-  fluencyCoherence      Decimal  @map("fluency_coherence") @db.Decimal(2, 1)
-  lexicalResource       Decimal  @map("lexical_resource") @db.Decimal(2, 1)
-  grammaticalRange      Decimal  @map("grammatical_range") @db.Decimal(2, 1)
-  pronunciation         Decimal  @db.Decimal(2, 1)
-  overallBand           Decimal  @map("overall_band") @db.Decimal(2, 1)
-  corrections           Json     @default("[]")
-  summaryFeedback       String?  @map("summary_feedback")
-  rawPronunciationData  Json?    @map("raw_pronunciation_data")
-  createdAt             DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-
-  attempt Attempt @relation(fields: [attemptId], references: [id], onDelete: Cascade)
-
-  // NOTE: 0-9 band range CHECK constraints live in the migration SQL.
-  @@index([attemptId])
-  @@map("scores")
-}
-
-// ---------------------------------------------------------------------
-// SESSION SCORES (aggregated, no AI call — pure computation)
-// ---------------------------------------------------------------------
-
-model SessionScore {
-  id                String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  sessionId         String   @unique @map("session_id") @db.Uuid
-  fluencyCoherence  Decimal  @map("fluency_coherence") @db.Decimal(2, 1)
-  lexicalResource   Decimal  @map("lexical_resource") @db.Decimal(2, 1)
-  grammaticalRange  Decimal  @map("grammatical_range") @db.Decimal(2, 1)
-  pronunciation     Decimal  @db.Decimal(2, 1)
-  overallBand       Decimal  @map("overall_band") @db.Decimal(2, 1)
-  createdAt         DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-
-  session PracticeSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
-
-  @@map("session_scores")
-}
-
-// ---------------------------------------------------------------------
-// STREAKS
-// ---------------------------------------------------------------------
-
-model Streak {
-  id                String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId            String    @unique @map("user_id") @db.Uuid
-  currentStreak     Int       @default(0) @map("current_streak")
-  longestStreak     Int       @default(0) @map("longest_streak")
-  lastPracticeDate  DateTime? @map("last_practice_date") @db.Date
-  updatedAt         DateTime  @updatedAt @map("updated_at") @db.Timestamptz(6)
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@map("streaks")
-}
-
-// ---------------------------------------------------------------------
-// AI USAGE LOG
-// ---------------------------------------------------------------------
-
-model AiUsageLog {
-  id                 String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  userId             String     @map("user_id") @db.Uuid
-  attemptId          String?    @map("attempt_id") @db.Uuid
-  callType           AiCallType @map("call_type")
-  provider           String
-  durationOrTokens   Decimal?   @map("duration_or_tokens") @db.Decimal(10, 2)
-  estimatedCostUsd   Decimal    @default(0) @map("estimated_cost_usd") @db.Decimal(10, 6)
-  createdAt          DateTime   @default(now()) @map("created_at") @db.Timestamptz(6)
-
-  user    User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  attempt Attempt? @relation(fields: [attemptId], references: [id], onDelete: SetNull)
-
-  @@index([userId, createdAt(sort: Desc)])
-  @@index([callType])
-  @@map("ai_usage_logs")
-}
-
-// ---------------------------------------------------------------------
-// CLASSES (teacher features)
-// ---------------------------------------------------------------------
-
-model Class {
-  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  teacherId  String   @map("teacher_id") @db.Uuid
-  name       String
-  inviteCode String   @unique @map("invite_code")
-  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz(6)
-
-  teacher     User          @relation("ClassTeacher", fields: [teacherId], references: [id], onDelete: Cascade)
-  members     ClassMember[]
-  assignments Assignment[]
-
-  @@index([teacherId])
-  @@map("classes")
-}
-
-model ClassMember {
-  id        String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  classId   String   @map("class_id") @db.Uuid
-  studentId String   @map("student_id") @db.Uuid
-  joinedAt  DateTime @default(now()) @map("joined_at") @db.Timestamptz(6)
-
-  class   Class @relation(fields: [classId], references: [id], onDelete: Cascade)
-  student User  @relation(fields: [studentId], references: [id], onDelete: Cascade)
-
-  @@unique([classId, studentId])
-  @@index([classId])
-  @@index([studentId])
-  @@map("class_members")
-}
-
-model Assignment {
-  id           String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
-  classId      String    @map("class_id") @db.Uuid
-  topicGroupId String?   @map("topic_group_id") @db.Uuid
-  title        String
-  dueDate      DateTime? @map("due_date") @db.Date
-  createdAt    DateTime  @default(now()) @map("created_at") @db.Timestamptz(6)
-
-  class      Class       @relation(fields: [classId], references: [id], onDelete: Cascade)
-  topicGroup TopicGroup? @relation(fields: [topicGroupId], references: [id])
-
-  @@index([classId])
-  @@map("assignments")
+  @@map("voice_gender")
 }

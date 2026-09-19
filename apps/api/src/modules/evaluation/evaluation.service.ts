@@ -13,10 +13,14 @@ export class EvaluationService {
     this.providerName = provider.name;
   }
 
-  async evaluateAttempt(attemptId: string, transcript: string, questionText: string) {
-    const { result, usageTokens } = await this.provider.evaluate(transcript, questionText);
-    await this.attemptsRepository.createScore(attemptId, result);
-    await this.attemptsRepository.markCompleted(attemptId);
-    return { result, usageTokens };
+  async evaluateAttempt(attemptId: bigint, transcript: string, questionText: string) {
+    const errorTypes = await this.attemptsRepository.findErrorTypeSlugs();
+    const { result, usageTokens } = await this.provider.evaluate(
+      transcript,
+      questionText,
+      errorTypes.map((type) => type.slug),
+    );
+    const attempt = await this.attemptsRepository.saveEvaluation(attemptId, result);
+    return { attempt, result, usageTokens };
   }
 }

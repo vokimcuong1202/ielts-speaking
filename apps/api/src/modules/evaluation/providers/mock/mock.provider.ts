@@ -5,16 +5,17 @@ import { EvaluationOutcome, EvaluationProvider } from "../../evaluation.provider
 export class MockEvaluationProvider implements EvaluationProvider {
   readonly name = "mock";
 
-  async evaluate(_transcript: string, _questionText: string): Promise<EvaluationOutcome> {
+  async evaluate(_transcript: string, _questionText: string, _errorTypeSlugs: string[]): Promise<EvaluationOutcome> {
     return {
       result: {
-        fluencyCoherence: 6.5,
-        lexicalResource: 6.5,
-        grammaticalRange: 6.5,
-        pronunciation: 6.5,
-        overallBand: 6.5,
-        corrections: [],
-        summaryFeedback: "Mock feedback used for local development.",
+        bandOverall: 6.5,
+        criteria: {
+          fluency: { band: 6.5, commentVi: "Nói khá trôi chảy (dữ liệu giả lập)." },
+          lexical: { band: 6.5, commentVi: "Vốn từ ổn (dữ liệu giả lập)." },
+          grammar: { band: 6.5, commentVi: "Ngữ pháp ổn (dữ liệu giả lập)." },
+          pronunciation: { band: 6.5, commentVi: "Phát âm rõ (dữ liệu giả lập)." },
+        },
+        errors: [],
       },
     };
   }

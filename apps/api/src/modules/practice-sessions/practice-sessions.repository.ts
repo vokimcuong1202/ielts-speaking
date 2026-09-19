@@ -1,6 +1,5 @@
 import { Injectable } from "@nestjs/common";
 import { PrismaService } from "../../infrastructure/database/prisma.service";
-import { SessionStatus } from "../../../../../database/generated/client";
 import { CreateSessionDto } from "./dto/create-session.dto";
 
 @Injectable()
@@ -11,37 +10,38 @@ export class PracticeSessionsRepository {
     return this.prisma.practiceSession.create({
       data: {
         userId,
-        type: dto.type,
+        mode: dto.mode,
+        part: dto.part,
+        forecastSetId: dto.forecastSetId,
         topicGroupId: dto.topicGroupId,
-        status: SessionStatus.in_progress,
+        voiceCode: dto.voiceCode,
+        questionCount: dto.questionCount,
+        hideQuestion: dto.hideQuestion,
       },
     });
   }
 
-  complete(id: string) {
+  findOwned(id: bigint, userId: string) {
+    return this.prisma.practiceSession.findFirst({ where: { id, userId } });
+  }
+
+  finish(id: bigint, abandoned: boolean) {
     return this.prisma.practiceSession.update({
       where: { id },
-      data: { status: SessionStatus.completed, completedAt: new Date() },
+      data: { finishedAt: new Date(), abandoned },
     });
   }
 
-  createSessionScore(sessionId: string, scores: {
-    fluencyCoherence: number;
-    lexicalResource: number;
-    grammaticalRange: number;
-    pronunciation: number;
-    overallBand: number;
-  }) {
-    return this.prisma.sessionScore.create({ data: { sessionId, ...scores } });
-  }
-
-  findByIdWithResults(id: string) {
-    return this.prisma.practiceSession.findUnique({
-      where: { id },
+  findByIdWithResults(id: bigint, userId: string) {
+    return this.prisma.practiceSession.findFirst({
+      where: { id, userId },
       include: {
-        attempts: { include: { question: true, score: true } },
-        sessionScore: true,
         topicGroup: true,
+        examinerVoice: true,
+        attempts: {
+          orderBy: { recordedAt: "asc" },
+          include: { question: true, attemptScores: true },
+        },
       },
     });
   }
@@ -49,8 +49,12 @@ export class PracticeSessionsRepository {
   findHistoryForUser(userId: string) {
     return this.prisma.practiceSession.findMany({
       where: { userId },
-      include: { sessionScore: true, topicGroup: true },
+      include: { topicGroup: true, _count: { select: { attempts: true } } },
       orderBy: { startedAt: "desc" },
     });
+  }
+
+  findActiveVoices() {
+    return this.prisma.examinerVoice.findMany({ where: { isActive: true }, orderBy: { name: "asc" } });
   }
 }

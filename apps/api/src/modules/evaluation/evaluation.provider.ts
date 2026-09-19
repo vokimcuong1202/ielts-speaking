@@ -7,7 +7,8 @@ export interface EvaluationOutcome {
 
 export interface EvaluationProvider {
   readonly name: string;
-  evaluate(transcript: string, questionText: string): Promise<EvaluationOutcome>;
+  /** `errorTypeSlugs` is the catalogue (error_types.slug) the provider should classify errors into. */
+  evaluate(transcript: string, questionText: string, errorTypeSlugs: string[]): Promise<EvaluationOutcome>;
 }
 
 export const EVALUATION_PROVIDER = Symbol("EVALUATION_PROVIDER");

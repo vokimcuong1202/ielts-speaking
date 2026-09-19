@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectQueue } from "@nestjs/bullmq";
 import { Queue } from "bullmq";
 
@@ -8,8 +8,6 @@ import { QuotaService } from "../quota/quota.service";
 import { CreateSessionDto } from "./dto/create-session.dto";
 import { CreateAttemptDto } from "./dto/create-attempt.dto";
 import { TRANSCRIPTION_QUEUE } from "../../infrastructure/queue/queue.module";
-
-const average = (values: number[]) => values.reduce((sum, value) => sum + value, 0) / values.length;
 
 @Injectable()
 export class PracticeSessionsService {
@@ -21,49 +19,56 @@ export class PracticeSessionsService {
   ) {}
 
   createSession(userId: string, dto: CreateSessionDto) {
+    if (dto.mode === "mock_part" && !dto.part) {
+      throw new BadRequestException("part is required for mock_part sessions");
+    }
     return this.sessionsRepository.create(userId, dto);
   }
 
-  async createAttempt(userId: string, sessionId: string, dto: CreateAttemptDto) {
-    await this.quotaService.assertHasQuota(userId, dto.durationSeconds);
+  async createAttempt(userId: string, sessionId: bigint, dto: CreateAttemptDto) {
+    const session = await this.sessionsRepository.findOwned(sessionId, userId);
+    if (!session) throw new NotFoundException("Session not found");
+    if (session.finishedAt) throw new BadRequestException("Session is already finished");
+
+    await this.quotaService.assertHasQuota(userId, "speaking_turn");
+    await this.quotaService.assertHasQuota(userId, "ai_scoring");
 
     const attempt = await this.attemptsRepository.create(sessionId, userId, dto);
+    await this.quotaService.consume(userId, "speaking_turn");
 
     // Hands off to the async pipeline: TranscriptionWorker -> EvaluationWorker.
     // Keeping this out of the request/response cycle lets transcription and
     // evaluation take as long as they need, and retry independently on failure.
-    await this.transcriptionQueue.add("transcribe", { attemptId: attempt.id });
+    // BullMQ payloads are JSON, so the bigint id travels as a string.
+    await this.transcriptionQueue.add("transcribe", { attemptId: attempt.id.toString() });
 
     return attempt;
   }
 
-  getResult(sessionId: string) {
-    return this.sessionsRepository.findByIdWithResults(sessionId);
+  async getAttempt(userId: string, attemptId: bigint) {
+    const attempt = await this.attemptsRepository.findDetailForUser(attemptId, userId);
+    if (!attempt) throw new NotFoundException("Attempt not found");
+    return attempt;
+  }
+
+  async getResult(userId: string, sessionId: bigint) {
+    const session = await this.sessionsRepository.findByIdWithResults(sessionId, userId);
+    if (!session) throw new NotFoundException("Session not found");
+    return session;
   }
 
   getHistory(userId: string) {
     return this.sessionsRepository.findHistoryForUser(userId);
   }
 
-  async finalizeSessionIfComplete(sessionId: string) {
-    const pending = await this.attemptsRepository.countPendingForSession(sessionId);
-    if (pending > 0) return;
+  async finishSession(userId: string, sessionId: bigint, abandoned = false) {
+    const session = await this.sessionsRepository.findOwned(sessionId, userId);
+    if (!session) throw new NotFoundException("Session not found");
+    if (session.finishedAt) return session;
+    return this.sessionsRepository.finish(sessionId, abandoned);
+  }
 
-    const scoredAttempts = await this.attemptsRepository.findScoredForSession(sessionId);
-    const scores = scoredAttempts
-      .map((attempt) => attempt.score)
-      .filter((score): score is NonNullable<typeof score> => score !== null);
-
-    if (scores.length === 0) return;
-
-    await this.sessionsRepository.createSessionScore(sessionId, {
-      fluencyCoherence: average(scores.map((score) => score.fluencyCoherence.toNumber())),
-      lexicalResource: average(scores.map((score) => score.lexicalResource.toNumber())),
-      grammaticalRange: average(scores.map((score) => score.grammaticalRange.toNumber())),
-      pronunciation: average(scores.map((score) => score.pronunciation.toNumber())),
-      overallBand: average(scores.map((score) => score.overallBand.toNumber())),
-    });
-
-    await this.sessionsRepository.complete(sessionId);
+  listVoices() {
+    return this.sessionsRepository.findActiveVoices();
   }
 }

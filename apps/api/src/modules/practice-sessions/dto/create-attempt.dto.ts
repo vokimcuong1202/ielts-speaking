@@ -1,13 +1,20 @@
-import { IsNumber, IsPositive, IsString } from "class-validator";
+import { IsBoolean, IsInt, IsOptional, IsString, Min } from "class-validator";
+import { BigIntId } from "../../../common/decorators/bigint-id.decorator";
 
 export class CreateAttemptDto {
-  @IsString()
-  questionId: string;
+  @BigIntId()
+  questionId: bigint;
 
+  /** URL returned by POST /audio/upload */
   @IsString()
-  rawAudioKey: string;
+  audioUrl: string;
 
-  @IsNumber()
-  @IsPositive()
-  durationSeconds: number;
+  @IsInt()
+  @Min(1)
+  durationMs: number;
+
+  /** The learner pressed "Hiện câu hỏi" while answering (hidden-question mode). */
+  @IsOptional()
+  @IsBoolean()
+  questionRevealed?: boolean;
 }

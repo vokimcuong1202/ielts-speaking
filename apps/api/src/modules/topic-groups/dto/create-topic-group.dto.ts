@@ -1,40 +1,24 @@
-import { Type } from "class-transformer";
-import { ArrayMinSize, IsArray, IsIn, IsInt, IsOptional, IsString, Min, ValidateNested } from "class-validator";
+import { IsIn, IsInt, IsOptional, IsString, Matches, Min } from "class-validator";
 
-export class CreateQuestionDto {
-  @IsIn(["part1", "part2", "part3"])
-  part: "part1" | "part2" | "part3";
+export const IELTS_PARTS = ["part1", "part2", "part3"] as const;
+export type IeltsPartValue = (typeof IELTS_PARTS)[number];
+
+export class CreateTopicGroupDto {
+  @IsIn(IELTS_PARTS)
+  part: IeltsPartValue;
+
+  @Matches(/^[a-z0-9]+(-[a-z0-9]+)*$/, { message: "slug must be kebab-case" })
+  slug: string;
 
   @IsString()
-  text: string;
+  nameEn: string;
+
+  @IsOptional()
+  @IsString()
+  nameVi?: string;
 
   @IsOptional()
   @IsInt()
   @Min(0)
-  orderIndex?: number;
-
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  prepSeconds?: number;
-
-  @IsOptional()
-  @IsInt()
-  @Min(1)
-  speakSeconds?: number;
-}
-
-export class CreateTopicGroupDto {
-  @IsString()
-  name: string;
-
-  @IsOptional()
-  @IsString()
-  forecastSeason?: string;
-
-  @IsArray()
-  @ArrayMinSize(1)
-  @ValidateNested({ each: true })
-  @Type(() => CreateQuestionDto)
-  questions: CreateQuestionDto[];
+  sortOrder?: number;
 }

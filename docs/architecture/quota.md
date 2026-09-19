@@ -1,27 +1,26 @@
-# Quota & Cost Model
+# Quota
+
+Limits are **daily and per kind**, driven by the user's plan.
 
 ```
-User quota (quota_accounts.quota_seconds, per billing period)
-     ↓
-Audio duration submitted per session
-     ↓
-usage_events (raw log: type=TRANSCRIPTION|EVALUATION, quantity, provider, cost)
-     ↓
-quota_accounts.used_seconds (running total, incremented per transcription)
-     ↓
-remaining quota = quota_seconds - used_seconds
+plans (free | pro)                     users.timezone
+  daily_speaking_turns / unlimited_speaking      │
+  daily_ai_scorings                              ▼
+        │                              local "today" (streak/quota roll at 0h local)
+        ▼                                        │
+subscriptions (active, not past period end)     │
+  └─ none? → free plan                          ▼
+                         quota_usage (user_id, usage_date, kind) → used, allowance snapshot
 ```
 
-`usage_events` is the source of truth — it's an append-only log of every billable call
-(STT seconds consumed, evaluation requests made, which provider, and its estimated `cost`).
-`quota_accounts.used_seconds` is a denormalized running total kept in sync for fast quota
-checks (`QuotaService.assertHasQuota`) without summing `usage_events` on every request.
-
-This split is what makes it possible to:
-- answer "how many seconds does this user have left" cheaply (read `quota_accounts`)
-- answer "what did this user actually cost us this month" precisely (sum `usage_events.cost`)
-- reconstruct/audit quota if a bug ever desyncs the running total
-
-TODO once pricing is decided: plan → `quota_seconds` mapping, and a per-provider `cost`
-calculation (Deepgram $/min, OpenAI $/token) fed into `recordTranscriptionUsage` /
-`recordEvaluationUsage`.
+- `QuotaService.getSummary` → `GET /quota/me`: per kind `{ used, allowance, remaining }` (`null` = unlimited).
+- `assertHasQuota(userId, kind)` throws 403 when `remaining <= 0`; `consume(userId, kind)` upserts today's row and
+  snapshots the allowance that applied that day.
+- Where each kind is consumed:
+  - `speaking_turn` — when an attempt is created (`POST /practice-sessions/:id/attempts`)
+  - `ai_scoring` — by the evaluation worker after a successful score (attempts that end `invalid`/`failed` are free)
+  - `mock_test` — when a mock test is started
+  - `ai_tutor_message` — reserved for the AI tutor (not implemented yet)
+- `plans` only defines limits for speaking turns and AI scorings; `mock_test` / `ai_tutor_message` are unlimited until a
+  column (or `plans.features`) says otherwise.
+- The old per-call cost log (`ai_usage_logs`) no longer exists in the schema, so provider cost is not tracked.

@@ -3,7 +3,7 @@ import { Job, Queue } from "bullmq";
 
 import { TranscriptionService } from "../modules/transcription/transcription.service";
 import { AttemptsRepository } from "../modules/practice-sessions/attempts.repository";
-import { QuotaService } from "../modules/quota/quota.service";
+import { MockTestsService } from "../modules/mock-tests/mock-tests.service";
 import { EVALUATION_QUEUE, TRANSCRIPTION_QUEUE } from "../infrastructure/queue/queue.module";
 
 interface TranscribeJobData {
@@ -15,30 +15,32 @@ export class TranscriptionWorker extends WorkerHost {
   constructor(
     private readonly transcriptionService: TranscriptionService,
     private readonly attemptsRepository: AttemptsRepository,
-    private readonly quotaService: QuotaService,
+    private readonly mockTestsService: MockTestsService,
     @InjectQueue(EVALUATION_QUEUE) private readonly evaluationQueue: Queue,
   ) {
     super();
   }
 
   async process(job: Job<TranscribeJobData>) {
-    const { attemptId } = job.data;
+    const attemptId = BigInt(job.data.attemptId);
 
     const attempt = await this.attemptsRepository.findByIdWithContext(attemptId);
-    if (!attempt) return;
+    if (!attempt || attempt.status !== "uploaded") return; // gone, or already handled on a retry
 
     try {
-      const result = await this.transcriptionService.transcribeAttempt(attemptId, attempt.rawAudioKey);
-      await this.quotaService.recordTranscriptionUsage(
-        attempt.userId,
-        attemptId,
-        result.durationSeconds,
-        this.transcriptionService.providerName,
-      );
+      if (!attempt.audioUrl) throw new Error("Attempt has no audio");
+      const outcome = await this.transcriptionService.transcribeAttempt(attemptId, attempt.audioUrl, attempt.durationMs);
 
-      await this.evaluationQueue.add("evaluate", { attemptId, transcript: result.transcript });
+      if (!outcome.valid) {
+        // Invalid answers are terminal; a mock test may now be ready to close out.
+        if (attempt.mockTestId) await this.mockTestsService.finalizeIfComplete(attempt.mockTestId);
+        return;
+      }
+
+      await this.evaluationQueue.add("evaluate", { attemptId: job.data.attemptId, transcript: outcome.transcript });
     } catch (error) {
-      await this.attemptsRepository.markFailed(attemptId, (error as Error).message);
+      await this.attemptsRepository.markFailed(attemptId);
+      if (attempt.mockTestId) await this.mockTestsService.finalizeIfComplete(attempt.mockTestId);
       throw error;
     }
   }

@@ -1,0 +1,1005 @@
+{
+  "info": {
+    "name": "Learning English POC API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{token}}",
+        "type": "string"
+      }
+    ]
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:4000"
+    },
+    {
+      "key": "token",
+      "value": ""
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Register",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/register",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "register"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"dash-test@example.com\",\n  \"displayName\": \"Dash Test\",\n  \"password\": \"password123\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const t = pm.response.json().accessToken;",
+                  "if (t) pm.collectionVariables.set(\"token\", t);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login (saves token)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/auth/login",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "auth",
+                "login"
+              ]
+            },
+            "auth": {
+              "type": "noauth"
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"dash-test@example.com\",\n  \"password\": \"password123\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const t = pm.response.json().accessToken;",
+                  "if (t) pm.collectionVariables.set(\"token\", t);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Home",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/dashboard/home",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "dashboard",
+                "home"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Progress dashboard",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/progress/dashboard",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "progress",
+                "dashboard"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Heatmap",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/progress/heatmap?days=30",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "progress",
+                "heatmap"
+              ],
+              "query": [
+                {
+                  "key": "days",
+                  "value": "30"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Band history",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/progress/band-history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "progress",
+                "band-history"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Top errors",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/progress/errors?limit=5",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "progress",
+                "errors"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "5"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Dismiss recommendation",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/progress/recommendations/1/dismiss",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "progress",
+                "recommendations",
+                "1",
+                "dismiss"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Quota",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/quota/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "quota",
+                "me"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Me",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Update profile",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"displayName\": \"Minh Anh\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Update goal",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/users/me/goal",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "users",
+                "me",
+                "goal"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"targetBand\": 7,\n  \"examDate\": \"2026-12-12\",\n  \"weeklyTargetSessions\": 5\n}"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Catalogue",
+      "item": [
+        {
+          "name": "Topic groups",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/topic-groups",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "topic-groups"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Topic group",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/topic-groups/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "topic-groups",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Questions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/questions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "questions"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Question",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/questions/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "questions",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Question vocab",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/questions/1/vocab",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "questions",
+                "1",
+                "vocab"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Question attempts",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/questions/1/attempts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "questions",
+                "1",
+                "attempts"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Bookmark",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/questions/1/bookmark",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "questions",
+                "1",
+                "bookmark"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Remove bookmark",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/questions/1/bookmark",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "questions",
+                "1",
+                "bookmark"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Examiner voices",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/examiner-voices",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "examiner-voices"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Forecast current set",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/forecast-sets/current",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "forecast-sets",
+                "current"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Forecast questions",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/forecast-sets/current/questions?sort=probability&limit=4",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "forecast-sets",
+                "current",
+                "questions"
+              ],
+              "query": [
+                {
+                  "key": "sort",
+                  "value": "probability"
+                },
+                {
+                  "key": "limit",
+                  "value": "4"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Forecast topics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/forecast-sets/current/topics?part=part1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "forecast-sets",
+                "current",
+                "topics"
+              ],
+              "query": [
+                {
+                  "key": "part",
+                  "value": "part1"
+                }
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Practice",
+      "item": [
+        {
+          "name": "Create session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/practice-sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "practice-sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mode\": \"practice_question\",\n  \"part\": \"part1\",\n  \"forecastSetId\": 2\n}"
+            }
+          }
+        },
+        {
+          "name": "Upload audio",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/audio/upload",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "audio",
+                "upload"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Create attempt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/practice-sessions/1/attempts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "practice-sessions",
+                "1",
+                "attempts"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"questionId\": 1,\n  \"audioUrl\": \"<url from upload>\",\n  \"durationMs\": 30000\n}"
+            }
+          }
+        },
+        {
+          "name": "Finish session",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/practice-sessions/1/finish",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "practice-sessions",
+                "1",
+                "finish"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{}"
+            }
+          }
+        },
+        {
+          "name": "Get session",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/practice-sessions/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "practice-sessions",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "History",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/practice-sessions/history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "practice-sessions",
+                "history"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get attempt",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/attempts/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "attempts",
+                "1"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Mock tests",
+      "item": [
+        {
+          "name": "Create",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/mock-tests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mock-tests"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"label\": \"Full test 1\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Finish",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/mock-tests/1/finish",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mock-tests",
+                "1",
+                "finish"
+              ]
+            }
+          }
+        },
+        {
+          "name": "List",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/mock-tests",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mock-tests"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Get",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/mock-tests/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mock-tests",
+                "1"
+              ]
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Vocabulary",
+      "item": [
+        {
+          "name": "Topics",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vocabulary/topics",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vocabulary",
+                "topics"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Topic items",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vocabulary/topics/1?bandTier=7",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vocabulary",
+                "topics",
+                "1"
+              ],
+              "query": [
+                {
+                  "key": "bandTier",
+                  "value": "7"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Daily",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vocabulary/daily",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vocabulary",
+                "daily"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Notebook",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vocabulary/notebook?state=new",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vocabulary",
+                "notebook"
+              ],
+              "query": [
+                {
+                  "key": "state",
+                  "value": "new"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "Save word",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vocabulary/notebook",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vocabulary",
+                "notebook"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vocabItemId\": 1,\n  \"source\": \"daily_pick\"\n}"
+            }
+          }
+        },
+        {
+          "name": "Remove word",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vocabulary/notebook/1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vocabulary",
+                "notebook",
+                "1"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Start review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vocabulary/review/sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vocabulary",
+                "review",
+                "sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"limit\": 20\n}"
+            }
+          }
+        },
+        {
+          "name": "Submit review",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vocabulary/review/sessions/1/reviews",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vocabulary",
+                "review",
+                "sessions",
+                "1",
+                "reviews"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userVocabId\": 1,\n  \"rating\": \"good\",\n  \"revealedMs\": 2500\n}"
+            }
+          }
+        },
+        {
+          "name": "Finish review",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vocabulary/review/sessions/1/finish",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vocabulary",
+                "review",
+                "sessions",
+                "1",
+                "finish"
+              ]
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

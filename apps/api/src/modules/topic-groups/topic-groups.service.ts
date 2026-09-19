@@ -1,20 +1,29 @@
-import { Injectable } from "@nestjs/common";
+import { ConflictException, Injectable, NotFoundException } from "@nestjs/common";
 import { TopicGroupsRepository } from "./topic-groups.repository";
-import { CreateTopicGroupDto } from "./dto/create-topic-group.dto";
+import { CreateTopicGroupDto, IeltsPartValue } from "./dto/create-topic-group.dto";
 
 @Injectable()
 export class TopicGroupsService {
   constructor(private readonly topicGroupsRepository: TopicGroupsRepository) {}
 
-  findAll() {
-    return this.topicGroupsRepository.findAllActive();
+  findAll(part?: IeltsPartValue) {
+    return this.topicGroupsRepository.findAll(part);
   }
 
-  findById(id: string) {
-    return this.topicGroupsRepository.findByIdWithQuestions(id);
+  async findById(id: bigint) {
+    const topicGroup = await this.topicGroupsRepository.findByIdWithQuestions(id);
+    if (!topicGroup) throw new NotFoundException("Topic group not found");
+    return topicGroup;
   }
 
-  create(dto: CreateTopicGroupDto) {
-    return this.topicGroupsRepository.create(dto);
+  async create(dto: CreateTopicGroupDto) {
+    try {
+      return await this.topicGroupsRepository.create(dto);
+    } catch (error) {
+      if ((error as { code?: string }).code === "P2002") {
+        throw new ConflictException("A topic group with this part and slug already exists");
+      }
+      throw error;
+    }
   }
 }

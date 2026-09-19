@@ -12,6 +12,12 @@ import { AudioModule } from "./modules/audio/audio.module";
 import { TranscriptionModule } from "./modules/transcription/transcription.module";
 import { EvaluationModule } from "./modules/evaluation/evaluation.module";
 import { QuotaModule } from "./modules/quota/quota.module";
+import { QuestionsModule } from "./modules/questions/questions.module";
+import { ForecastModule } from "./modules/forecast/forecast.module";
+import { VocabularyModule } from "./modules/vocabulary/vocabulary.module";
+import { MockTestsModule } from "./modules/mock-tests/mock-tests.module";
+import { ProgressModule } from "./modules/progress/progress.module";
+import { DashboardModule } from "./modules/dashboard/dashboard.module";
 import { WorkersModule } from "./workers/workers.module";
 
 @Module({
@@ -22,6 +28,12 @@ import { WorkersModule } from "./workers/workers.module";
     AuthModule,
     UsersModule,
     TopicGroupsModule,
+    QuestionsModule,
+    ForecastModule,
+    VocabularyModule,
+    MockTestsModule,
+    ProgressModule,
+    DashboardModule,
     PracticeSessionsModule,
     AudioModule,
     TranscriptionModule,
