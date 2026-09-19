@@ -34,6 +34,7 @@ Numeric columns (bands, ease, probability) are JSON numbers. Dates are ISO strin
 | POST | /audio/upload | Upload audio, returns storage URL |
 | POST | /mock-tests | `{ part?, voiceCode?, label?, retakeOfId? }` → mock test + `sessionId` to post attempts to |
 | GET | /mock-tests | My mock tests |
+| GET | /mock-tests/history?type=&limit=&offset= | "Thi thử" page: `{ activity, counts, attempts, totalAttemptsOlder }`. `type` = part1/part2/part3/full; default limit 10 |
 | GET | /mock-tests/:id | Scores per part/criterion, attempts, retake chain |
 | POST | /mock-tests/:id/finish | Submit; poll `GET /mock-tests/:id` until `scored` / `invalidated` |
 | GET | /progress/dashboard | Home: goal, streak, stats, week strip, due vocab, recommendations, latest mock |

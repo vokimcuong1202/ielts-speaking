@@ -68,8 +68,11 @@ export interface TestAttempt {
   collapseLabel?: string;
 }
 
+export type TestHistoryFilter = "all" | TestType;
+
 export interface TestHistoryData {
   activity: TestActivitySummary;
+  counts: Record<TestHistoryFilter, number>;
   attempts: TestAttempt[];
   totalAttemptsOlder: number;
 }

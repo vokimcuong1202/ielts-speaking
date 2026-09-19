@@ -37,6 +37,45 @@ export class MockTestsRepository {
     });
   }
 
+  findUserTimezone(userId: string) {
+    return this.prisma.user.findUnique({ where: { id: userId }, select: { timezone: true } });
+  }
+
+  /** Light rows for the whole history: filtering, retake chains, heatmap and counts are derived from these. */
+  listHistoryIndex(userId: string) {
+    return this.prisma.mockTest.findMany({
+      where: { userId },
+      orderBy: { takenAt: "desc" },
+      select: {
+        id: true,
+        status: true,
+        bandOverall: true,
+        retakeOfId: true,
+        takenAt: true,
+        session: { select: { mode: true, part: true } },
+      },
+    });
+  }
+
+  findHistoryDetails(userId: string, ids: bigint[]) {
+    return this.prisma.mockTest.findMany({
+      where: { userId, id: { in: ids } },
+      orderBy: { takenAt: "desc" },
+      include: {
+        examinerVoice: { select: { name: true } },
+        mockTestScores: { where: { part: null } },
+        attempts: {
+          orderBy: { recordedAt: "asc" },
+          include: {
+            question: { select: { part: true, textEn: true } },
+            attemptScores: true,
+            attemptTranscriptSpans: { orderBy: { charStart: "asc" } },
+          },
+        },
+      },
+    });
+  }
+
   findOwnedRetakeTarget(id: bigint, userId: string) {
     return this.prisma.mockTest.findFirst({ where: { id, userId }, select: { id: true } });
   }

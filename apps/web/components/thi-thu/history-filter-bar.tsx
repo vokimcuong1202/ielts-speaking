@@ -1,45 +1,39 @@
 "use client";
 
-import { useState } from "react";
 import { cn } from "@/lib/cn";
+import type { TestHistoryFilter } from "@/types/test-history";
 
 interface HistoryFilterBarProps {
-  totalCount: number;
+  counts: Record<TestHistoryFilter, number>;
+  value: TestHistoryFilter;
+  onChange: (value: TestHistoryFilter) => void;
 }
 
-const filters = [
+const filters: { id: Exclude<TestHistoryFilter, "all">; label: string }[] = [
   { id: "part1", label: "Part 1" },
   { id: "part2", label: "Part 2" },
   { id: "part3", label: "Part 3" },
   { id: "full", label: "Full test" },
-] as const;
+];
 
-export function HistoryFilterBar({ totalCount }: HistoryFilterBarProps) {
-  const [activeFilter, setActiveFilter] = useState<"all" | (typeof filters)[number]["id"]>("all");
+export function HistoryFilterBar({ counts, value, onChange }: HistoryFilterBarProps) {
+  const buttonClass = (active: boolean) =>
+    cn(
+      "cursor-pointer rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors",
+      active ? "bg-ink-900 text-white" : "border border-border-strong text-ink-700 hover:bg-page"
+    );
 
   return (
     <div className="flex flex-wrap gap-2">
-      <button
-        type="button"
-        onClick={() => setActiveFilter("all")}
-        className={cn(
-          "cursor-pointer rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors",
-          activeFilter === "all" ? "bg-ink-900 text-white" : "border border-border-strong text-ink-700 hover:bg-page"
-        )}
-      >
-        Tất cả · {totalCount}
+      <button type="button" onClick={() => onChange("all")} className={buttonClass(value === "all")}>
+        Tất cả · {counts.all}
       </button>
       {filters.map((filter) => (
         <button
           key={filter.id}
           type="button"
-          onClick={() => setActiveFilter(filter.id)}
-          className={cn(
-            "cursor-pointer rounded-full px-3.5 py-1.5 text-sm font-semibold transition-colors",
-            activeFilter === filter.id
-              ? "bg-ink-900 text-white"
-              : "border border-border-strong text-ink-700 hover:bg-page"
-          )}
+          onClick={() => onChange(filter.id)}
+          className={buttonClass(value === filter.id)}
         >
           {filter.label}
         </button>

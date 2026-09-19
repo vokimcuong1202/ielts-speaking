@@ -777,6 +777,73 @@
           }
         },
         {
+          "name": "History (Thi thử page)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/mock-tests/history",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mock-tests",
+                "history"
+              ]
+            }
+          }
+        },
+        {
+          "name": "History – filter by type",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/mock-tests/history?type=part1",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mock-tests",
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "type",
+                  "value": "part1"
+                }
+              ]
+            }
+          }
+        },
+        {
+          "name": "History – paginate",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/mock-tests/history?limit=10&offset=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "mock-tests",
+                "history"
+              ],
+              "query": [
+                {
+                  "key": "limit",
+                  "value": "10"
+                },
+                {
+                  "key": "offset",
+                  "value": "10"
+                }
+              ]
+            }
+          }
+        },
+        {
           "name": "Get",
           "request": {
             "method": "GET",
