@@ -60,4 +60,33 @@ export class ForecastRepository {
   findTopicProgress(userId: string, forecastSetId: bigint) {
     return this.prisma.userTopicProgress.findMany({ where: { userId, forecastSetId } });
   }
+
+  /** Every active question in the set with what the Luyện forecast page needs to group and label it. */
+  findPracticeQuestions(forecastSetId: bigint) {
+    return this.prisma.forecastQuestion.findMany({
+      where: { forecastSetId, question: { isActive: true } },
+      orderBy: { sortOrder: "asc" },
+      include: {
+        question: {
+          include: {
+            topicGroup: { select: { id: true, slug: true, nameEn: true, nameVi: true, sortOrder: true } },
+            parent: {
+              select: {
+                id: true,
+                textEn: true,
+                topicGroup: { select: { id: true, slug: true, nameEn: true, nameVi: true, sortOrder: true } },
+              },
+            },
+            questionVocab: {
+              orderBy: [{ isCore: "desc" }, { bandTier: "desc" }, { sortOrder: "asc" }],
+              take: 3,
+              select: { vocabItem: { select: { term: true } } },
+            },
+            followUps: { where: { isActive: true }, orderBy: { id: "asc" }, select: { id: true, textEn: true } },
+            _count: { select: { followUps: true } },
+          },
+        },
+      },
+    });
+  }
 }

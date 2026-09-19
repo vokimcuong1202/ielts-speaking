@@ -13,11 +13,15 @@ export class ForecastService {
   }
 
   /** "current" resolves to the set flagged is_current. */
-  async resolveSetId(idOrCurrent: bigint | "current") {
-    if (idOrCurrent === "current") return (await this.getCurrentSet()).id;
+  async resolveSet(idOrCurrent: bigint | "current") {
+    if (idOrCurrent === "current") return this.getCurrentSet();
     const set = await this.forecastRepository.findSet(idOrCurrent);
     if (!set) throw new NotFoundException("Forecast set not found");
-    return set.id;
+    return set;
+  }
+
+  async resolveSetId(idOrCurrent: bigint | "current") {
+    return (await this.resolveSet(idOrCurrent)).id;
   }
 
   /** Forecast list rows merged with the caller's own progress (the old v_forecast_board view). */

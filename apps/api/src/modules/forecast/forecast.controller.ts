@@ -6,6 +6,7 @@ import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { BigIntId } from "../../common/decorators/bigint-id.decorator";
 import { IELTS_PARTS, IeltsPartValue } from "../topic-groups/dto/create-topic-group.dto";
 import { ForecastService } from "./forecast.service";
+import { ForecastPracticeService } from "./forecast-practice.service";
 import type { ForecastSort } from "./forecast.repository";
 
 class ForecastQuestionsQuery {
@@ -43,11 +44,21 @@ class ForecastTopicsQuery {
 @Controller("forecast-sets")
 @UseGuards(JwtAuthGuard)
 export class ForecastController {
-  constructor(private readonly forecastService: ForecastService) {}
+  constructor(
+    private readonly forecastService: ForecastService,
+    private readonly forecastPracticeService: ForecastPracticeService,
+  ) {}
 
   @Get("current")
   current() {
     return this.forecastService.getCurrentSet();
+  }
+
+  /** Everything the "Luyện forecast" page renders (web `ForecastPracticeData`). */
+  @Get(":setId/practice")
+  async practice(@CurrentUser() user: { userId: string }, @Param("setId") setId: string) {
+    const set = await this.forecastService.resolveSet(this.parse(setId));
+    return this.forecastPracticeService.getPractice(user.userId, set);
   }
 
   @Get(":setId/questions")
@@ -69,6 +80,10 @@ export class ForecastController {
   }
 
   private resolve(setId: string) {
-    return this.forecastService.resolveSetId(setId === "current" ? "current" : BigInt(/^\d+$/.test(setId) ? setId : "0"));
+    return this.forecastService.resolveSetId(this.parse(setId));
+  }
+
+  private parse(setId: string) {
+    return setId === "current" ? "current" : BigInt(/^\d+$/.test(setId) ? setId : "0");
   }
 }

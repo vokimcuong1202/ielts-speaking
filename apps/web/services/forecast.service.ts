@@ -1,8 +1,8 @@
 import type { ForecastPracticeData } from "@/types/forecast";
-import { getForecastPracticeMockData } from "@/lib/forecast-mock";
+import { apiFetch } from "@/lib/api-client";
 
 export const forecastService = {
-  async getPracticeData(): Promise<ForecastPracticeData> {
-    return getForecastPracticeMockData();
+  getPracticeData() {
+    return apiFetch<ForecastPracticeData>("/forecast-sets/current/practice");
   },
 };

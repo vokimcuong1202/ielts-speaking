@@ -499,6 +499,25 @@
           }
         },
         {
+          "name": "Forecast practice (Luyện forecast page)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/forecast-sets/current/practice",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "forecast-sets",
+                "current",
+                "practice"
+              ]
+            },
+            "description": "Everything the Luyện forecast page renders: quarterLabel, part tabs, part1 topics, part2 groups + cue cards, part3 follow-up clusters, each merged with the caller's progress. `current` can be replaced with a forecast set id."
+          }
+        },
+        {
           "name": "Forecast questions",
           "request": {
             "method": "GET",

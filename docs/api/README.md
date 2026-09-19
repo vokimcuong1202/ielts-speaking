@@ -22,6 +22,7 @@ Numeric columns (bands, ease, probability) are JSON numbers. Dates are ISO strin
 | GET | /questions/:id/attempts | My attempt history on this question |
 | PUT/DELETE | /questions/:id/bookmark | "Lưu câu này" |
 | GET | /forecast-sets/current | Current forecast set |
+| GET | /forecast-sets/:setId/practice | "Luyện forecast" page: `{ quarterLabel, parts, part1, part2, part3, custom }` (web `ForecastPracticeData`) merged with my progress. Part 3 clusters = follow-ups of the set's Part 2 cue cards; `custom` is always empty until users can add questions |
 | GET | /forecast-sets/:setId/questions?part&topicGroupId&flag&sort&limit | Forecast rows merged with my progress. `:setId` = id or `current` |
 | GET | /forecast-sets/:setId/topics?part= | Topic cards with totals and my progress |
 | GET | /examiner-voices | Selectable examiner voices |
