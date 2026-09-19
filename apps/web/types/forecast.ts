@@ -1,4 +1,4 @@
-export type ForecastPartId = "part1" | "part2" | "part3";
+export type ForecastPartId = "part1" | "part2" | "part3" | "custom";
 
 export interface ForecastPartTab {
   id: ForecastPartId;
@@ -6,62 +6,120 @@ export interface ForecastPartTab {
   count: number;
 }
 
-export interface ForecastQuarterInfo {
-  title: string;
-  rangeLabel: string;
-  description: string;
+export type ForecastQuestionStatus = "new" | "unanswered" | "answered";
+
+export type ForecastSortId = "newestTopic" | "probability" | "unpracticed";
+
+export interface ForecastSortOption {
+  id: ForecastSortId;
+  label: string;
 }
 
-export interface ForecastQuarterProgress {
-  practicedCount: number;
-  totalCount: number;
-  averageBand: number;
-  hotUnpracticedCount: number;
+export type ForecastBadgeVariant = "brand" | "warning" | "neutral" | "outline";
+
+export interface ForecastBadge {
+  label: string;
+  variant: ForecastBadgeVariant;
 }
 
-export type ForecastCardTag = "hayRa" | "moiVaoBo";
-
-export type ForecastPracticeState =
-  | { kind: "not-practiced" }
-  | { kind: "practiced"; band: number };
-
-export interface ForecastQuestionCard {
+// Part 1 — flat topic list, 4 questions per topic
+export interface ForecastTopicQuestion {
   id: string;
-  part: ForecastPartId;
-  tag?: ForecastCardTag;
-  category: string;
   title: string;
-  occurrenceCount: number;
-  occurrenceWindowDays: number;
-  extraMetaLabel?: string;
-  practice: ForecastPracticeState;
+  status: ForecastQuestionStatus;
 }
 
-export interface ForecastOutlineStep {
-  order: number;
-  leadIn: string;
-  example?: string;
-  note?: string;
+export interface ForecastTopicPracticeSummary {
+  answeredCount: number;
+  totalCount: number;
+  lastPracticedLabel: string;
+  lowestScoreQuestionTitle: string;
+  latestBand: number;
 }
 
-export interface ForecastQuestionDetail {
-  questionId: string;
-  part: ForecastPartId;
-  tag?: ForecastCardTag;
+export interface ForecastTopic {
+  id: string;
+  name: string;
+  isNewTopic: boolean;
+  hasNewQuestions: boolean;
+  addedDateLabel?: string;
+  questions: ForecastTopicQuestion[];
+  vocabulary: string[];
+  practiceSummary?: ForecastTopicPracticeSummary;
+}
+
+export interface ForecastPart1Data {
+  pageTitle: string;
+  hideAnsweredLabel: string;
+  sortOptions: ForecastSortOption[];
+  topics: ForecastTopic[];
+}
+
+// Shared by Part 2 & Part 3 — topics are organised into groups (Người / Vật / Hoạt động / Địa điểm)
+export interface ForecastGroup {
+  id: string;
+  label: string;
+  badge?: ForecastBadge;
+  unitCount: number;
+  unitLabel: string;
+  practicedCount: number;
+  progressLabel: string;
+}
+
+// Part 2 — one cue card per topic
+export interface ForecastCueCard {
+  id: string;
+  groupId: string;
+  tag?: ForecastBadge;
   title: string;
   prompts: string[];
   prepMinutes: number;
   speakMinutes: number;
-  outlineSteps: ForecastOutlineStep[];
   vocabulary: string[];
-  followUpQuestions: string[];
+  followUpCount: number;
+  sidebarMetaLabel: string;
+  rowMetaLabel: string;
+  statusLabel: string;
+  practiceSummary?: { practicedCount: number; latestBand: number };
+}
+
+export interface ForecastPart2Data {
+  pageTitle: string;
+  hideAnsweredLabel: string;
+  groups: ForecastGroup[];
+  cueCardsByGroup: Record<string, ForecastCueCard[]>;
+}
+
+// Part 3 — clusters of follow-up questions linked back to a Part 2 cue card
+export interface ForecastFollowUpQuestion {
+  id: string;
+  title: string;
+  status: ForecastQuestionStatus;
+}
+
+export interface ForecastFollowUpCluster {
+  id: string;
+  groupId: string;
+  sourceTitle: string;
+  questions: ForecastFollowUpQuestion[];
+  sidebarBadge?: ForecastBadge;
+  sidebarMetaLabel: string;
+  tipText?: string;
+  practiceSummary?: ForecastTopicPracticeSummary;
+}
+
+export interface ForecastPart3Data {
+  pageTitle: string;
+  hideAnsweredLabel: string;
+  groups: ForecastGroup[];
+  clustersByGroup: Record<string, ForecastFollowUpCluster[]>;
 }
 
 export interface ForecastPracticeData {
-  quarter: ForecastQuarterInfo;
-  progress: ForecastQuarterProgress;
+  quarterLabel: string;
   parts: ForecastPartTab[];
-  questions: ForecastQuestionCard[];
-  remainingCount: number;
-  questionDetails: Record<string, ForecastQuestionDetail>;
+  part1: ForecastPart1Data;
+  part2: ForecastPart2Data;
+  part3: ForecastPart3Data;
+  custom: ForecastPart1Data;
 }
