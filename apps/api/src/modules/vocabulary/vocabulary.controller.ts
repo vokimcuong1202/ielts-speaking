@@ -6,6 +6,9 @@ import { CurrentUser } from "../../common/decorators/current-user.decorator";
 import { BigIntId } from "../../common/decorators/bigint-id.decorator";
 import { ParseBigIntPipe } from "../../common/pipes/parse-bigint.pipe";
 import { VocabularyService } from "./vocabulary.service";
+import { VocabularyOverviewService } from "./vocabulary-overview.service";
+import { VocabularyTopicDetailService } from "./vocabulary-topic-detail.service";
+import { VocabularyOverviewQuery } from "./dto/vocabulary-overview.query";
 import { SRS_STATES, SaveVocabDto, SubmitReviewDto, VOCAB_KINDS } from "./dto/vocabulary.dto";
 
 const toNumber = ({ value }: { value: unknown }) => Number(value);
@@ -44,11 +47,27 @@ class StartReviewBody {
 @Controller("vocabulary")
 @UseGuards(JwtAuthGuard)
 export class VocabularyController {
-  constructor(private readonly vocabularyService: VocabularyService) {}
+  constructor(
+    private readonly vocabularyService: VocabularyService,
+    private readonly vocabularyOverviewService: VocabularyOverviewService,
+    private readonly vocabularyTopicDetailService: VocabularyTopicDetailService,
+  ) {}
+
+  /** Everything the "Sổ từ vựng" page renders (web `VocabularyNotebookData`). */
+  @Get("overview")
+  overview(@CurrentUser() user: { userId: string }, @Query() query: VocabularyOverviewQuery) {
+    return this.vocabularyOverviewService.getOverview(user.userId, query);
+  }
 
   @Get("topics")
   topics() {
     return this.vocabularyService.listTopics();
+  }
+
+  /** Everything the topic page renders (web `VocabularyTopicDetail`). */
+  @Get("topics/:id/detail")
+  topicDetail(@CurrentUser() user: { userId: string }, @Param("id", ParseBigIntPipe) id: bigint) {
+    return this.vocabularyTopicDetailService.getDetail(user.userId, id);
   }
 
   @Get("topics/:id")

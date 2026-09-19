@@ -885,6 +885,52 @@
       "name": "Vocabulary",
       "item": [
         {
+          "name": "Overview (Sổ từ vựng page)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vocabulary/overview",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vocabulary",
+                "overview"
+              ]
+            },
+            "description": "Everything the Sổ từ vựng page renders: reviewSummary (due today + quick-review minutes), filterCounts, groups (saved words grouped by source question), remainingGroupsCount, topicOverview and topic cards with mastered progress."
+          }
+        },
+        {
+          "name": "Overview - needs review",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vocabulary/overview?status=needsReview&groupLimit=10",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vocabulary",
+                "overview"
+              ],
+              "query": [
+                {
+                  "key": "status",
+                  "value": "needsReview"
+                },
+                {
+                  "key": "groupLimit",
+                  "value": "10"
+                }
+              ]
+            },
+            "description": "`status` = all | needsReview | mastered filters the saved words (filterCounts stay unfiltered). `groupLimit` (1-50, default 5) caps the groups; the rest show up in remainingGroupsCount."
+          }
+        },
+        {
           "name": "Topics",
           "request": {
             "method": "GET",
@@ -899,6 +945,26 @@
                 "topics"
               ]
             }
+          }
+        },
+        {
+          "name": "Topic detail (vocabulary topic page)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vocabulary/topics/1/detail",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vocabulary",
+                "topics",
+                "1",
+                "detail"
+              ]
+            },
+            "description": "Everything the /vocabulary/:topicId page renders: titles, totals, mastered count, hot parts label, category counts and all words with the caller's saved flag. Replace 1 with a topic id from Topics / Overview."
           }
         },
         {

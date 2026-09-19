@@ -13,6 +13,8 @@ export interface VocabularyWordEntry {
 
 export type VocabularyTopicWordEntry = VocabularyWordEntry;
 
+export type VocabularyNotebookStatus = "all" | "needsReview" | "mastered";
+
 export interface VocabularyGroup {
   id: string;
   sourceType: VocabularySourceType;

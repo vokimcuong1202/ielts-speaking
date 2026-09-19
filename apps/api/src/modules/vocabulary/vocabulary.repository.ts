@@ -85,6 +85,18 @@ export class VocabularyRepository {
     });
   }
 
+  /** Whole notebook for the "Sổ từ vựng" page, newest first. */
+  findNotebookEntries(userId: string) {
+    return this.prisma.userVocab.findMany({
+      where: { userId },
+      orderBy: { savedAt: "desc" },
+      include: {
+        vocabItem: true,
+        question: { select: { id: true, textEn: true, part: true } },
+      },
+    });
+  }
+
   countDue(userId: string, today: Date) {
     return this.prisma.userVocab.count({ where: { userId, dueOn: { lte: today }, state: { not: "suspended" } } });
   }

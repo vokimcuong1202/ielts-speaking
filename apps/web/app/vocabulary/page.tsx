@@ -14,10 +14,14 @@ import { TopicCard } from "@/components/vocabulary/topic-card";
 import { VocabularyReviewModal } from "@/components/vocabulary/vocabulary-review-modal";
 import { useVocabularyNotebook } from "@/hooks/use-vocabulary-notebook";
 import { toReviewWords } from "@/lib/vocabulary-review";
-import type { VocabularyGroup, VocabularyReviewSession } from "@/types/vocabulary";
+import type { VocabularyGroup, VocabularyNotebookStatus, VocabularyReviewSession } from "@/types/vocabulary";
+
+const GROUP_PAGE_SIZE = 5;
 
 export default function VocabularyPage() {
-  const { data, isLoading } = useVocabularyNotebook();
+  const [status, setStatus] = useState<VocabularyNotebookStatus>("all");
+  const [groupLimit, setGroupLimit] = useState(GROUP_PAGE_SIZE);
+  const { data, isLoading } = useVocabularyNotebook({ status, groupLimit });
   const [activeTabId, setActiveTabId] = useState<VocabularyTabId>("suggested");
   const [reviewSession, setReviewSession] = useState<VocabularyReviewSession | null>(null);
 
@@ -91,7 +95,14 @@ export default function VocabularyPage() {
           </div>
         ) : (
           <div className="flex flex-col gap-4">
-            <StatusFilterBar counts={data.filterCounts} />
+            <StatusFilterBar
+              counts={data.filterCounts}
+              activeFilterId={status}
+              onChange={(next) => {
+                setStatus(next);
+                setGroupLimit(GROUP_PAGE_SIZE);
+              }}
+            />
 
             <div className="flex flex-col gap-4">
               {data.groups.map((group) => (
@@ -100,7 +111,11 @@ export default function VocabularyPage() {
             </div>
 
             {data.remainingGroupsCount > 0 ? (
-              <button type="button" className="mx-auto cursor-pointer text-sm font-semibold text-brand-700 hover:underline">
+              <button
+                type="button"
+                onClick={() => setGroupLimit((limit) => limit + GROUP_PAGE_SIZE)}
+                className="mx-auto cursor-pointer text-sm font-semibold text-brand-700 hover:underline"
+              >
                 Xem thêm {data.remainingGroupsCount} câu đã lưu từ →
               </button>
             ) : null}

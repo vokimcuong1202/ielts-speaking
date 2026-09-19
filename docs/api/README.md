@@ -43,7 +43,9 @@ Numeric columns (bands, ease, probability) are JSON numbers. Dates are ISO strin
 | GET | /progress/band-history | Band line: one point per scored mock test |
 | GET | /progress/errors?limit= | "Lỗi lặp lại nhiều nhất" |
 | POST | /progress/recommendations/:id/dismiss | |
+| GET | /vocabulary/overview?status=&groupLimit= | "Sổ từ vựng" page: `{ reviewSummary, filterCounts, groups, remainingGroupsCount, topicOverview, topics }` (web `VocabularyNotebookData`). `status` = all/needsReview/mastered; `groupLimit` default 5 |
 | GET | /vocabulary/topics | Topic library |
+| GET | /vocabulary/topics/:id/detail | Topic page: `{ id, titleEn, titleVi, totalWords, masteredWords, hotPartsLabel, categoryCounts, words }` (web `VocabularyTopicDetail`); words carry `saved` / `userVocabId` |
 | GET | /vocabulary/topics/:id?bandTier&kind | Topic items with `saved` flag |
 | GET | /vocabulary/daily | Today's picks (created on first call each day) |
 | GET | /vocabulary/notebook?state&sourceQuestionId | Saved words + `dueCount` |

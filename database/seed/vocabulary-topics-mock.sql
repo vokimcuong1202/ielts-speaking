@@ -1,0 +1,65 @@
+-- Dev-only: fills every vocabulary topic with a realistic word list (collocations, idioms, phrasal verbs).
+--   psql "$DATABASE_URL" -f database/seed/vocabulary-topics-mock.sql
+-- Insert only; rows already present (same term + meaning) are skipped, so it is safe to re-run.
+\set ON_ERROR_STOP on
+
+INSERT INTO vocab_items (term, ipa, kind, meaning_vi, example_en, band_tier, topic_id)
+SELECT v.term, v.ipa, v.kind::vocab_kind, v.meaning_vi, v.example_en, v.band_tier, t.id
+FROM (VALUES
+  ('people-relationships', 'a wealth of experience', '/welθ/', 'collocation', 'rất nhiều kinh nghiệm', 'My grandmother has a wealth of experience in raising children.', 7),
+  ('people-relationships', 'a close-knit family', '/kləʊs nɪt/', 'collocation', 'gia đình gắn bó khăng khít', 'We are a close-knit family, so we eat dinner together.', 8),
+  ('people-relationships', 'a lifelong friendship', '/ˈlaɪflɒŋ/', 'collocation', 'tình bạn cả đời', 'It turned into a lifelong friendship after university.', 6),
+  ('people-relationships', 'a role model', '/rəʊl ˈmɒdl/', 'collocation', 'tấm gương để noi theo', 'She is a role model for everyone in my family.', 7),
+  ('people-relationships', 'weather the storm', '/ˈweðə ðə stɔːm/', 'idiom', 'cùng nhau vượt qua giai đoạn khó khăn', 'My grandparents weathered the storm of the war years.', 7),
+  ('people-relationships', 'see eye to eye', '/aɪ tuː aɪ/', 'idiom', 'đồng quan điểm với ai', 'We don''t always see eye to eye about money.', 8),
+  ('people-relationships', 'set in her ways', '/set ɪn hɜː weɪz/', 'idiom', 'quen lối sống cũ, khó thay đổi', 'She is a bit set in her ways, but I find that charming.', 6),
+  ('people-relationships', 'go the extra mile', '/ˈekstrə maɪl/', 'idiom', 'làm hơn cả mức cần thiết', 'He always goes the extra mile for his students.', 7),
+  ('people-relationships', 'look up to', '/lʊk ʌp tuː/', 'phrasal_verb', 'ngưỡng mộ, coi là hình mẫu', 'I have looked up to my aunt since I was a child.', 6),
+  ('people-relationships', 'bring up', '/brɪŋ ʌp/', 'phrasal_verb', 'nuôi dạy (một đứa trẻ)', 'I was brought up by my grandparents in the countryside.', 6),
+  ('work-career', 'a heavy workload', '/ˈwɜːkləʊd/', 'collocation', 'khối lượng công việc nặng', 'I have a heavy workload this semester.', 7),
+  ('work-career', 'a tight deadline', '/ˈdɛdlaɪn/', 'collocation', 'hạn nộp gấp', 'We''re working against a tight deadline.', 8),
+  ('work-career', 'burn the midnight oil', '/ˈmɪdnaɪt ɔɪl/', 'idiom', 'học/làm việc khuya', 'I had to burn the midnight oil to finish the report.', 6),
+  ('work-career', 'keep up with', '/kiːp ʌp wɪð/', 'phrasal_verb', 'theo kịp', 'It''s hard to keep up with the workload.', 6),
+  ('technology-media', 'a steep learning curve', '/stiːp ˈlɜːnɪŋ kɜːv/', 'collocation', 'lúc đầu học rất khó', 'Learning to code has a steep learning curve.', 7),
+  ('technology-media', 'user-friendly', '/ˈjuːzə ˈfrɛndli/', 'collocation', 'dễ dùng, thân thiện với người dùng', 'The new app is very user-friendly.', 8),
+  ('technology-media', 'get the hang of', '/hæŋ/', 'idiom', 'bắt đầu làm quen và thành thạo', 'I finally got the hang of the new software.', 6),
+  ('technology-media', 'log into', '/lɒg ˈɪntuː/', 'phrasal_verb', 'đăng nhập vào', 'I couldn''t log into my account this morning.', 6),
+  ('hometown-lifestyle', 'a bustling city', '/ˈbʌslɪŋ/', 'collocation', 'thành phố nhộn nhịp', 'Hanoi is a bustling city full of energy.', 7),
+  ('hometown-lifestyle', 'a stone''s throw away', '/stəʊnz θrəʊ/', 'collocation', 'rất gần', 'My school is just a stone''s throw away.', 8),
+  ('hometown-lifestyle', 'home is where the heart is', '/hɑːt/', 'idiom', 'quê nhà là nơi có trái tim', 'No matter where I go, home is where the heart is.', 6),
+  ('hometown-lifestyle', 'grow up', '/grəʊ ʌp/', 'phrasal_verb', 'trưởng thành, lớn lên', 'I grew up in a small village.', 6),
+  ('travel-nature', 'a pressing issue', '/ˈprɛsɪŋ ˈɪʃuː/', 'collocation', 'vấn đề cấp bách', 'Climate change is a pressing issue.', 7),
+  ('travel-nature', 'renewable energy', '/rɪˈnjuːəbl ˈɛnədʒi/', 'collocation', 'năng lượng tái tạo', 'We should invest more in renewable energy.', 8),
+  ('travel-nature', 'leave no stone unturned', '/ʌnˈtɜːnd/', 'idiom', 'không bỏ sót cách nào', 'We should leave no stone unturned to protect nature.', 6),
+  ('travel-nature', 'cut down on', '/kʌt daʊn ɒn/', 'phrasal_verb', 'giảm thiểu', 'We need to cut down on plastic waste.', 6),
+  ('technology-media', 'binge-watch a series', '/bɪndʒ wɒtʃ/', 'collocation', 'xem liền một mạch', 'I binge-watched the whole series in one weekend.', 7),
+  ('technology-media', 'a guilty pleasure', '/ˈgɪlti ˈplɛʒə/', 'collocation', 'thú vui khó bỏ', 'Reality TV is my guilty pleasure.', 8),
+  ('technology-media', 'glued to the screen', '/gluːd/', 'idiom', 'dán mắt vào màn hình', 'Kids these days are glued to the screen.', 6),
+  ('technology-media', 'chill out', '/tʃɪl aʊt/', 'phrasal_verb', 'thư giãn', 'I like to chill out with music after work.', 6),
+  ('travel-nature', 'off the beaten track', '/ˈbiːtn træk/', 'collocation', 'nơi ít người biết đến', 'We prefer places off the beaten track.', 7),
+  ('travel-nature', 'a breathtaking view', '/ˈbrɛθteɪkɪŋ/', 'collocation', 'cảnh đẹp ngoạn mục', 'The mountain offers a breathtaking view.', 8),
+  ('travel-nature', 'catch some rays', '/reɪz/', 'idiom', 'tắm nắng', 'We spent the afternoon catching some rays on the beach.', 6),
+  ('travel-nature', 'set off', '/sɛt ɒf/', 'phrasal_verb', 'khởi hành', 'We set off early to avoid traffic.', 6),
+  ('food-health', 'a balanced diet', '/ˈbælənst ˈdaɪət/', 'collocation', 'chế độ ăn cân bằng', 'A balanced diet keeps you healthy.', 7),
+  ('food-health', 'junk food', '/dʒʌŋk fuːd/', 'collocation', 'đồ ăn nhanh không lành mạnh', 'I try to avoid junk food.', 8),
+  ('food-health', 'you are what you eat', '/iːt/', 'idiom', 'ăn gì thì là người thế đó', 'My mom always says you are what you eat.', 6),
+  ('food-health', 'work out', '/wɜːk aʊt/', 'phrasal_verb', 'tập thể dục', 'I work out three times a week.', 6),
+  ('work-career', 'a great bargain', '/ˈbɑːgɪn/', 'collocation', 'món hời', 'I got this jacket at a great bargain.', 7),
+  ('work-career', 'disposable income', '/dɪˈspəʊzəbl/', 'collocation', 'thu nhập khả dụng', 'Young people have more disposable income nowadays.', 8),
+  ('work-career', 'cost an arm and a leg', '/ɑːm/', 'idiom', 'rất đắt', 'That laptop cost an arm and a leg.', 6),
+  ('work-career', 'save up for', '/seɪv ʌp fɔː/', 'phrasal_verb', 'tiết kiệm để mua', 'I''m saving up for a new phone.', 6),
+  ('education-study', 'rote learning', '/rəʊt/', 'collocation', 'học vẹt', 'Rote learning doesn''t help students think critically.', 7),
+  ('education-study', 'a well-rounded education', '/wɛl ˈraʊndɪd/', 'collocation', 'giáo dục toàn diện', 'Schools should provide a well-rounded education.', 8),
+  ('education-study', 'hit the books', '/bʊks/', 'idiom', 'học chăm chỉ', 'I need to hit the books before the exam.', 6),
+  ('education-study', 'drop out', '/drɒp aʊt/', 'phrasal_verb', 'bỏ học', 'Some students drop out due to financial issues.', 6),
+  ('hometown-lifestyle', 'heavy traffic', '/ˈhɛvi ˈtræfɪk/', 'collocation', 'giao thông đông đúc', 'Heavy traffic makes the commute stressful.', 7),
+  ('hometown-lifestyle', 'public transport', '/ˈpʌblɪk ˈtrænspɔːt/', 'collocation', 'giao thông công cộng', 'Public transport is cheap and convenient.', 8),
+  ('hometown-lifestyle', 'in the fast lane', '/leɪn/', 'idiom', 'cuộc sống bận rộn, gấp gáp', 'City life often feels like living in the fast lane.', 6),
+  ('hometown-lifestyle', 'commute to', '/kəˈmjuːt tuː/', 'phrasal_verb', 'đi lại (giữa nhà và nơi làm)', 'I commute to work by bus.', 6),
+  ('hometown-lifestyle', 'a deep-rooted tradition', '/diːp ˈruːtɪd/', 'collocation', 'truyền thống ăn sâu', 'Tet is a deep-rooted tradition in Vietnam.', 7),
+  ('hometown-lifestyle', 'cultural heritage', '/ˈkʌltʃərəl ˈhɛrɪtɪdʒ/', 'collocation', 'di sản văn hoá', 'We should preserve our cultural heritage.', 8),
+  ('hometown-lifestyle', 'pass down', '/pɑːs daʊn/', 'idiom', 'truyền lại', 'These customs are passed down through generations.', 6),
+  ('hometown-lifestyle', 'carry on', '/ˈkæri ɒn/', 'phrasal_verb', 'duy trì, tiếp tục', 'We carry on this tradition every year.', 6)
+) AS v(topic_slug, term, ipa, kind, meaning_vi, example_en, band_tier)
+JOIN vocab_topics t ON t.slug = v.topic_slug
+ON CONFLICT (term, meaning_vi) DO NOTHING;

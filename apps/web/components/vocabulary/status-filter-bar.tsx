@@ -1,18 +1,21 @@
 "use client";
 
-import { useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { cn } from "@/lib/cn";
-import type { VocabularyFilterCounts } from "@/types/vocabulary";
+import type { VocabularyFilterCounts, VocabularyNotebookStatus } from "@/types/vocabulary";
 
 const filters = [
   { id: "needsReview", label: "Cần ôn" },
   { id: "mastered", label: "Đã thuộc" },
 ] as const;
 
-export function StatusFilterBar({ counts }: { counts: VocabularyFilterCounts }) {
-  const [activeFilterId, setActiveFilterId] = useState<"all" | (typeof filters)[number]["id"]>("all");
+interface StatusFilterBarProps {
+  counts: VocabularyFilterCounts;
+  activeFilterId: VocabularyNotebookStatus;
+  onChange: (status: VocabularyNotebookStatus) => void;
+}
 
+export function StatusFilterBar({ counts, activeFilterId, onChange: setActiveFilterId }: StatusFilterBarProps) {
   return (
     <div className="flex flex-wrap items-center justify-between gap-3">
       <div className="flex flex-wrap gap-2">
