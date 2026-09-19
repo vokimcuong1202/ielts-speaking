@@ -43,7 +43,7 @@ export default function DashboardPage() {
         <TestScoreCard score={data.testScore} />
       </div>
 
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]">
         <ForecastPracticeCard questions={data.forecastQuestions} />
         <div className="flex min-w-0 flex-col gap-6">
           <WeekStreakCard streak={data.weekStreak} />

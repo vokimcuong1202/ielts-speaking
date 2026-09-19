@@ -8,7 +8,7 @@ import { UpdateGoalDto } from "./dto/update-goal.dto";
 export class UsersService {
   constructor(private readonly usersRepository: UsersRepository) {}
 
-  create(dto: CreateUserDto & { passwordHash: string }) {
+  create(dto: CreateUserDto & { passwordHash: string | null; avatarUrl?: string }) {
     return this.usersRepository.create(dto);
   }
 

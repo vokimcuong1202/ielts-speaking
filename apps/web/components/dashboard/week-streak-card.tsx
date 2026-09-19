@@ -5,8 +5,8 @@ import type { WeekStreak } from "@/types/dashboard";
 
 export function WeekStreakCard({ streak }: { streak: WeekStreak }) {
   return (
-    <Card className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4 p-6">
-      <div className="flex items-center gap-4">
+    <Card className="flex flex-wrap items-center justify-center gap-x-6 gap-y-4 p-6">
+      <div className="flex items-center justify-center gap-4">
         <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-flame-bg text-flame">
           <Flame className="h-7 w-7" fill="currentColor" strokeWidth={0} />
         </span>

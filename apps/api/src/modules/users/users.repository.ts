@@ -9,7 +9,7 @@ import { UpdateGoalDto } from "./dto/update-goal.dto";
 export class UsersRepository {
   constructor(private readonly prisma: PrismaService) {}
 
-  create(dto: CreateUserDto & { passwordHash: string }) {
+  create(dto: CreateUserDto & { passwordHash: string | null; avatarUrl?: string }) {
     return this.prisma.user.create({ data: dto });
   }
 
