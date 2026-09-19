@@ -28,10 +28,12 @@ export function TestScoreCard({ score }: { score: TestScoreSummary }) {
         )}
       </div>
 
-       <Button variant="primary" size="lg" className="mt-8 w-full">
-        <Headphones className="h-4 w-4" strokeWidth={2} />
-        Thi Full Test · {score.fullTestDurationMinutes} phút
-      </Button>
+      <Link href="/practice/setup?part=full" className="mt-8">
+        <Button variant="primary" size="lg" className="w-full">
+          <Headphones className="h-4 w-4" strokeWidth={2} />
+          Thi Full Test · {score.fullTestDurationMinutes} phút
+        </Button>
+      </Link>
 
     </Card>
   );

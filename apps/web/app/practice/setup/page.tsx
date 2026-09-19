@@ -15,7 +15,7 @@ import { usePracticeSetup } from "@/hooks/use-practice-setup";
 import type { PracticePartId } from "@/types/practice-setup";
 
 function isPracticePartId(value: string | null): value is PracticePartId {
-  return value === "part1" || value === "part3";
+  return value === "part1" || value === "part2" || value === "part3" || value === "full";
 }
 
 function PracticeSetupContent() {
@@ -45,13 +45,15 @@ function PracticeSetupContent() {
 
           <VoiceSelector voices={config.voices} selectedVoiceId={voiceId} onSelect={setSelectedVoiceId} />
 
-          <QuestionCountPicker
-            options={config.questionCountOptions}
-            selectedCount={count}
-            estimatedMinutes={estimatedMinutes}
-            hint={config.realExamHint}
-            onSelect={setQuestionCount}
-          />
+          {config.showQuestionCount && (
+            <QuestionCountPicker
+              options={config.questionCountOptions}
+              selectedCount={count}
+              estimatedMinutes={estimatedMinutes}
+              hint={config.realExamHint}
+              onSelect={setQuestionCount}
+            />
+          )}
 
           <TopicRandomNotice text={config.topicRandomNotice} />
 

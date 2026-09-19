@@ -9,7 +9,7 @@ const stepNumber: Record<SpeakingPartStep["id"], number> = {
   part3: 3,
 };
 
-const setupLinkablePartIds: SpeakingPartStep["id"][] = ["part1", "part3"];
+const setupLinkablePartIds: SpeakingPartStep["id"][] = ["part1", "part2", "part3"];
 
 export function PartStep({
   step,

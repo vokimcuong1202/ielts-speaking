@@ -22,7 +22,7 @@ export function ForecastPartTabs({ parts, activePartId, onChange }: ForecastPart
             activePartId === part.id ? "bg-ink-900 text-white" : "border border-border-strong text-ink-700 hover:bg-page"
           )}
         >
-          {part.label} · {part.count}
+          {part.label}
         </button>
       ))}
     </div>

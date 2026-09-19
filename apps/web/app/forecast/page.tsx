@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { LoadingIndicator } from "@/components/layout/loading-screen";
 import { ForecastPageHeader } from "@/components/forecast/forecast-page-header";
@@ -22,9 +23,15 @@ function sumGroups(groups: ForecastGroup[]) {
   );
 }
 
-export default function ForecastPage() {
+const forecastPartIds: ForecastPartId[] = ["part1", "part2", "part3", "custom"];
+
+function ForecastContent() {
+  const searchParams = useSearchParams();
+  const partParam = searchParams.get("part");
+  const initialPartId = forecastPartIds.find((id) => id === partParam) ?? "part1";
+
   const { data, isLoading } = useForecastPractice();
-  const [activePartId, setActivePartId] = useState<ForecastPartId>("part1");
+  const [activePartId, setActivePartId] = useState<ForecastPartId>(initialPartId);
   const [hideAnswered, setHideAnswered] = useState(false);
   const [search, setSearch] = useState("");
 
@@ -94,5 +101,21 @@ export default function ForecastPage() {
         />
       )}
     </AppShell>
+  );
+}
+
+export default function ForecastPage() {
+  return (
+    <Suspense
+      fallback={
+        <AppShell>
+          <div className="flex min-h-[60vh] items-center justify-center">
+            <LoadingIndicator />
+          </div>
+        </AppShell>
+      }
+    >
+      <ForecastContent />
+    </Suspense>
   );
 }

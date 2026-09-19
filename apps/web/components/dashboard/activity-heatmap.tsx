@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/cn";
 import type { HeatmapData, HeatmapDay } from "@/types/dashboard";
@@ -29,23 +29,21 @@ function formatHeatmapDate(dateStr: string) {
 type HoveredDay = { day: HeatmapDay; x: number; y: number };
 
 export function ActivityHeatmap({ heatmap }: { heatmap: HeatmapData }) {
-  const gridRef = useRef<HTMLDivElement>(null);
   const [hovered, setHovered] = useState<HoveredDay | null>(null);
 
   function handleEnter(day: HeatmapDay | undefined, event: React.MouseEvent<HTMLDivElement>) {
-    if (!day || !gridRef.current) return;
+    if (!day) return;
     const cellRect = event.currentTarget.getBoundingClientRect();
-    const gridRect = gridRef.current.getBoundingClientRect();
     setHovered({
       day,
-      x: cellRect.left - gridRect.left + cellRect.width / 2,
-      y: cellRect.top - gridRect.top,
+      x: cellRect.left + cellRect.width / 2,
+      y: cellRect.top,
     });
   }
 
   return (
     <Card className="flex-1 overflow-x-auto p-6">
-      <div ref={gridRef} className="relative flex w-fit gap-3">
+      <div className="relative flex w-fit gap-3">
         <div className="flex flex-col justify-between gap-[3px] pt-5 text-[11px] text-ink-400">
           {heatmap.weekdayLabels.map((label, index) => (
             <span key={index} className="flex h-3 items-center">
@@ -88,7 +86,7 @@ export function ActivityHeatmap({ heatmap }: { heatmap: HeatmapData }) {
 
         {hovered && (
           <div
-            className="animate-tooltip-in pointer-events-none absolute z-20 whitespace-nowrap rounded-lg bg-ink-900 px-2.5 py-1.5 text-xs text-white shadow-lg"
+            className="animate-tooltip-in pointer-events-none fixed z-50 whitespace-nowrap rounded-lg bg-ink-900 px-2.5 py-1.5 text-xs text-white shadow-lg"
             style={{ left: hovered.x, top: hovered.y }}
           >
             <p className="font-semibold">{formatHeatmapDate(hovered.day.date)}</p>

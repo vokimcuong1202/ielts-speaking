@@ -1,4 +1,4 @@
-export type PracticePartId = "part1" | "part3";
+export type PracticePartId = "part1" | "part2" | "part3" | "full";
 
 export type PracticeSetupIcon = "headphones" | "timer" | "chart" | "pen";
 
@@ -25,6 +25,7 @@ export interface PracticeSetupConfig {
   gradingCreditsRemaining: number;
   voices: PracticeVoiceOption[];
   defaultVoiceId: string;
+  showQuestionCount: boolean;
   questionCountOptions: number[];
   defaultQuestionCount: number;
   secondsPerQuestion: number;

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { Lightbulb, Mic } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,8 +31,8 @@ export function TodaySessionCard({ session }: { session: TodaySession }) {
         <div className="relative flex h-32 w-32 shrink-0 items-center justify-center">
           <span className="motion-safe:animate-mic-ring pointer-events-none absolute inset-0 rounded-full bg-brand-500/50" />
           <span className="motion-safe:animate-mic-ring pointer-events-none absolute inset-0 rounded-full bg-brand-500/50 [animation-delay:1.2s]" />
-          <button
-            type="button"
+          <Link
+            href={`/practice/setup?part=${defaultTipId}`}
             className="group motion-safe:animate-mic-breathe relative flex h-32 w-32 cursor-pointer flex-col items-center justify-center gap-1.5 rounded-full bg-brand-800 text-white shadow-lg transition-[transform,background-color] duration-200 ease-out hover:scale-105 hover:bg-brand-900 active:scale-95"
           >
             <Mic className="h-7 w-7 transition-transform duration-200 group-hover:scale-110" strokeWidth={2} />
@@ -40,7 +41,7 @@ export function TodaySessionCard({ session }: { session: TodaySession }) {
               <br />
               TEST NGAY
             </span>
-          </button>
+          </Link>
         </div>
 
         <div>
