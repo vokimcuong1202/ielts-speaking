@@ -11,6 +11,7 @@ import { ReviewSummaryCard } from "@/components/vocabulary/review-summary-card";
 import { TopicOverviewCard } from "@/components/vocabulary/topic-overview-card";
 import { TopicToolbar } from "@/components/vocabulary/topic-toolbar";
 import { TopicCard } from "@/components/vocabulary/topic-card";
+import { EmptyState } from "@/components/ui/empty-state";
 import { VocabularyReviewModal } from "@/components/vocabulary/vocabulary-review-modal";
 import { useVocabularyNotebook } from "@/hooks/use-vocabulary-notebook";
 import { toReviewWords } from "@/lib/vocabulary-review";
@@ -34,6 +35,8 @@ export default function VocabularyPage() {
       </AppShell>
     );
   }
+
+  const hasSavedWords = data.filterCounts.all > 0;
 
   const sourceBadgeByType = {
     forecast: { label: "ĐỀ FORECAST", variant: "brand" as const },
@@ -74,7 +77,9 @@ export default function VocabularyPage() {
             title="Từ vựng đã lưu"
             description="Xếp theo đúng câu hỏi bạn đang luyện khi bấm lưu, kèm nghĩa tiếng Việt ngay dưới mỗi từ."
           >
-            <ReviewSummaryCard reviewSummary={data.reviewSummary} onStartReview={handleStartDailyReview} />
+            {hasSavedWords ? (
+              <ReviewSummaryCard reviewSummary={data.reviewSummary} onStartReview={handleStartDailyReview} />
+            ) : null}
           </VocabularyHeader>
         )}
 
@@ -95,20 +100,35 @@ export default function VocabularyPage() {
           </div>
         ) : (
           <div className="flex flex-col gap-4">
-            <StatusFilterBar
-              counts={data.filterCounts}
-              activeFilterId={status}
-              onChange={(next) => {
-                setStatus(next);
-                setGroupLimit(GROUP_PAGE_SIZE);
-              }}
-            />
+            {hasSavedWords ? (
+              <StatusFilterBar
+                counts={data.filterCounts}
+                activeFilterId={status}
+                onChange={(next) => {
+                  setStatus(next);
+                  setGroupLimit(GROUP_PAGE_SIZE);
+                }}
+              />
+            ) : null}
 
-            <div className="flex flex-col gap-4">
-              {data.groups.map((group) => (
-                <VocabularyGroupCard key={group.id} group={group} onStartReview={handleStartGroupReview} />
-              ))}
-            </div>
+            {!hasSavedWords ? (
+              <EmptyState
+                title="Chưa có từ vựng nào được lưu"
+                description="Khi luyện tập, bấm lưu những từ bạn muốn nhớ — chúng sẽ xuất hiện ở đây, xếp theo từng câu hỏi."
+                action={{ label: "Xem từ vựng gợi ý", onClick: () => setActiveTabId("suggested") }}
+              />
+            ) : data.groups.length === 0 ? (
+              <EmptyState
+                title="Không có từ nào ở mục này"
+                description="Thử chọn bộ lọc khác để xem các từ đã lưu của bạn."
+              />
+            ) : (
+              <div className="flex flex-col gap-4">
+                {data.groups.map((group) => (
+                  <VocabularyGroupCard key={group.id} group={group} onStartReview={handleStartGroupReview} />
+                ))}
+              </div>
+            )}
 
             {data.remainingGroupsCount > 0 ? (
               <button

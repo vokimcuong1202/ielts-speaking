@@ -10,7 +10,6 @@ import { TestScoreCard } from "@/components/dashboard/test-score-card";
 import { ActivityHeatmap } from "@/components/dashboard/activity-heatmap";
 import { WeekStreakCard } from "@/components/dashboard/week-streak-card";
 import { ForecastPracticeCard } from "@/components/dashboard/forecast-practice-card";
-import { VocabularyCard } from "@/components/dashboard/vocabulary-card";
 import { useDashboardHome } from "@/hooks/use-dashboard-home";
 import { useAuthStore } from "@/stores/auth.store";
 
@@ -44,14 +43,12 @@ export default function DashboardPage() {
         <TestScoreCard score={data.testScore} />
       </div>
 
-      <div className="flex flex-col gap-6 lg:flex-row">
-        <ActivityHeatmap heatmap={data.heatmap} />
-        <WeekStreakCard streak={data.weekStreak} />
-      </div>
-
-      <div className="flex flex-col gap-6 lg:flex-row">
+      <div className="grid grid-cols-1 gap-6 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)]">
         <ForecastPracticeCard questions={data.forecastQuestions} />
-        {data.vocabulary && <VocabularyCard vocabulary={data.vocabulary} />}
+        <div className="flex min-w-0 flex-col gap-6">
+          <WeekStreakCard streak={data.weekStreak} />
+          <ActivityHeatmap heatmap={data.heatmap} />
+        </div>
       </div>
     </AppShell>
   );

@@ -66,6 +66,8 @@
   --animate-mic-ring: mic-ring 2.4s cubic-bezier(0, 0, 0.2, 1) infinite;
   --animate-mic-breathe: mic-breathe 2.4s ease-in-out infinite;
   --animate-tooltip-in: tooltip-in 0.12s ease-out forwards;
+  --animate-forecast-in: forecast-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-forecast-progress: forecast-progress 4.5s linear forwards;
 }
 
 body {
@@ -102,5 +104,25 @@ body {
   to {
     transform: translate(-50%, calc(-100% - 10px)) scale(1);
     opacity: 1;
+  }
+}
+
+@keyframes forecast-in {
+  from {
+    transform: translateX(32px) scale(0.97);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0) scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes forecast-progress {
+  from {
+    transform: scaleX(0);
+  }
+  to {
+    transform: scaleX(1);
   }
 }

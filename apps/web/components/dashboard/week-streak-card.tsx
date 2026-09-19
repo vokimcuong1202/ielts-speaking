@@ -5,17 +5,21 @@ import type { WeekStreak } from "@/types/dashboard";
 
 export function WeekStreakCard({ streak }: { streak: WeekStreak }) {
   return (
-    <Card className="flex w-full shrink-0 flex-col items-center p-6 text-center lg:w-64">
-      <div className="mt-4 flex items-center gap-3">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-flame-bg text-flame">
-          <Flame className="h-6 w-6" fill="currentColor" strokeWidth={0} />
+    <Card className="flex flex-wrap items-center justify-between gap-x-6 gap-y-4 p-6">
+      <div className="flex items-center gap-4">
+        <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-flame-bg text-flame">
+          <Flame className="h-7 w-7" fill="currentColor" strokeWidth={0} />
         </span>
-        <p className="text-4xl font-extrabold text-ink-900">{streak.currentStreak}</p>
+        <div>
+          <p className="flex items-baseline gap-2">
+            <span className="text-4xl font-extrabold leading-none text-ink-900">{streak.currentStreak}</span>
+            <span className="text-sm font-medium text-ink-700">ngày liên tiếp</span>
+          </p>
+          <p className="mt-1.5 text-xs text-ink-400">Streak mới bắt đầu lúc 0h giờ Việt Nam</p>
+        </div>
       </div>
-      <p className="mt-1 text-sm font-medium text-ink-700">ngày liên tiếp</p>
-      <p className="mt-1 text-xs text-ink-400">Streak mới bắt đầu lúc 0h giờ Việt Nam</p>
 
-      <Badge variant="outline" size="md" className="mt-4 w-fit">
+      <Badge variant="outline" size="md" className="w-fit">
         Kỷ lục: {streak.recordStreak} ngày
       </Badge>
     </Card>

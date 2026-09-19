@@ -7,6 +7,7 @@ import { LoadingIndicator } from "@/components/layout/loading-screen";
 import { PageHeader } from "@/components/thi-thu/page-header";
 import { TestTypeTabs } from "@/components/thi-thu/test-type-tabs";
 import { HistoryFilterBar } from "@/components/thi-thu/history-filter-bar";
+import { EmptyState } from "@/components/ui/empty-state";
 import { AttemptCard } from "@/components/thi-thu/attempt-card";
 import { useTestHistory } from "@/hooks/use-test-history";
 import { useAuthStore } from "@/stores/auth.store";
@@ -45,7 +46,7 @@ export default function ThiThuPage() {
 
   return (
     <AppShell>
-      <PageHeader activity={data.activity} />
+      <PageHeader />
 
       <TestTypeTabs />
 
@@ -55,11 +56,24 @@ export default function ThiThuPage() {
           <HistoryFilterBar counts={data.counts} value={filter} onChange={changeFilter} />
         </div>
 
-        <div className="mt-4 flex flex-col gap-4">
-          {data.attempts.map((attempt) => (
-            <AttemptCard key={attempt.id} attempt={attempt} />
-          ))}
-        </div>
+        {data.attempts.length === 0 ? (
+          <EmptyState
+            className="mt-4"
+            title={filter === "all" ? "Chưa có lần thi thử nào" : "Chưa có lần thi nào ở mục này"}
+            description={
+              filter === "all"
+                ? "Làm một bài thi thử để nhận điểm sát thi thật, rồi quay lại đây nghe và sửa lỗi từng câu."
+                : "Thử chọn bộ lọc khác, hoặc làm một bài thi thử mới."
+            }
+            action={{ label: "Thi Full test", href: "/practice/setup?part=full" }}
+          />
+        ) : (
+          <div className="mt-4 flex flex-col gap-4">
+            {data.attempts.map((attempt) => (
+              <AttemptCard key={attempt.id} attempt={attempt} />
+            ))}
+          </div>
+        )}
 
         {data.totalAttemptsOlder > 0 ? (
           <button

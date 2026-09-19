@@ -1,7 +1,4 @@
-import { MiniActivityHeatmap } from "./mini-activity-heatmap";
-import type { TestActivitySummary } from "@/types/test-history";
-
-export function PageHeader({ activity }: { activity: TestActivitySummary }) {
+export function PageHeader() {
   return (
     <div className="flex flex-wrap items-start justify-between gap-6">
       <div>
@@ -11,8 +8,6 @@ export function PageHeader({ activity }: { activity: TestActivitySummary }) {
           Nhận điểm sát thi thật, rồi mở lại từng bài để nghe và sửa lỗi.
         </p>
       </div>
-
-      <MiniActivityHeatmap activity={activity} />
     </div>
   );
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/cn";
 import type { HeatmapData, HeatmapDay } from "@/types/dashboard";
@@ -16,6 +16,8 @@ const heatColor: Record<number, string> = {
 const CELL_SIZE = 12;
 const CELL_GAP = 3;
 const COLUMN_WIDTH = CELL_SIZE + CELL_GAP;
+const LABEL_GAP = 12;
+const MIN_LABEL_SPAN = 3;
 
 const weekdayFullLabels = ["Chủ nhật", "Thứ hai", "Thứ ba", "Thứ tư", "Thứ năm", "Thứ sáu", "Thứ bảy"];
 
@@ -30,6 +32,44 @@ type HoveredDay = { day: HeatmapDay; x: number; y: number };
 
 export function ActivityHeatmap({ heatmap }: { heatmap: HeatmapData }) {
   const [hovered, setHovered] = useState<HoveredDay | null>(null);
+  const cardRef = useRef<HTMLDivElement>(null);
+  const labelsRef = useRef<HTMLDivElement>(null);
+  const [maxWeeks, setMaxWeeks] = useState(heatmap.weeks.length);
+
+  useEffect(() => {
+    const card = cardRef.current;
+    const labels = labelsRef.current;
+    if (!card || !labels) return;
+
+    function measure() {
+      if (!card || !labels) return;
+      const available = card.clientWidth - labels.offsetWidth - LABEL_GAP;
+      setMaxWeeks(Math.max(1, Math.floor((available + CELL_GAP) / COLUMN_WIDTH)));
+    }
+
+    measure();
+    const observer = new ResizeObserver(measure);
+    observer.observe(card);
+    return () => observer.disconnect();
+  }, []);
+
+  const { weeks, monthLabels, totalDays, activeDays } = useMemo(() => {
+    const offset = Math.max(0, heatmap.weeks.length - maxWeeks);
+    const visibleWeeks = heatmap.weeks.slice(offset);
+    const shifted = heatmap.monthLabels
+      .filter((month) => month.weekIndex >= offset)
+      .map((month) => ({ ...month, weekIndex: month.weekIndex - offset }));
+    const visibleLabels = shifted.filter(
+      (month, index) => index === shifted.length - 1 || shifted[index + 1].weekIndex - month.weekIndex >= MIN_LABEL_SPAN
+    );
+    const days = visibleWeeks.flat();
+    return {
+      weeks: visibleWeeks,
+      monthLabels: visibleLabels,
+      totalDays: days.length,
+      activeDays: days.filter((day) => day.sessionCount > 0).length,
+    };
+  }, [heatmap, maxWeeks]);
 
   function handleEnter(day: HeatmapDay | undefined, event: React.MouseEvent<HTMLDivElement>) {
     if (!day) return;
@@ -42,9 +82,9 @@ export function ActivityHeatmap({ heatmap }: { heatmap: HeatmapData }) {
   }
 
   return (
-    <Card className="flex-1 overflow-x-auto p-6">
-      <div className="relative flex w-fit gap-3">
-        <div className="flex flex-col justify-between gap-[3px] pt-5 text-[11px] text-ink-400">
+    <Card className="flex min-w-0 flex-1 flex-col overflow-x-auto p-6">
+      <div ref={cardRef} className="relative mb-4 flex w-full gap-3">
+        <div ref={labelsRef} className="flex flex-col justify-between gap-[3px] pt-5 text-[11px] text-ink-400">
           {heatmap.weekdayLabels.map((label, index) => (
             <span key={index} className="flex h-3 items-center">
               {label}
@@ -53,8 +93,8 @@ export function ActivityHeatmap({ heatmap }: { heatmap: HeatmapData }) {
         </div>
 
         <div>
-          <div className="relative mb-1 h-4 text-[11px] text-ink-400" style={{ width: heatmap.weeks.length * COLUMN_WIDTH }}>
-            {heatmap.monthLabels.map((month) => (
+          <div className="relative mb-1 h-4 text-[11px] text-ink-400" style={{ width: weeks.length * COLUMN_WIDTH }}>
+            {monthLabels.map((month) => (
               <span key={month.weekIndex} className="absolute top-0" style={{ left: month.weekIndex * COLUMN_WIDTH }}>
                 {month.label}
               </span>
@@ -62,7 +102,7 @@ export function ActivityHeatmap({ heatmap }: { heatmap: HeatmapData }) {
           </div>
 
           <div className="flex gap-[3px]">
-            {heatmap.weeks.map((week, weekIndex) => (
+            {weeks.map((week, weekIndex) => (
               <div key={weekIndex} className="flex flex-col gap-[3px]">
                 {Array.from({ length: 7 }).map((_, dayIndex) => {
                   const day = week[dayIndex];
@@ -98,9 +138,9 @@ export function ActivityHeatmap({ heatmap }: { heatmap: HeatmapData }) {
         )}
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4 text-xs text-ink-500">
+      <div className="mt-auto flex flex-wrap items-center justify-between gap-2 border-t border-border pt-4 text-xs text-ink-500">
         <p>
-          {heatmap.totalDays} ngày · <span className="font-semibold text-ink-900">{heatmap.activeDays} ngày</span>{" "}
+          {totalDays} ngày · <span className="font-semibold text-ink-900">{activeDays} ngày</span>{" "}
           có luyện
         </p>
         <div className="flex items-center gap-1.5">

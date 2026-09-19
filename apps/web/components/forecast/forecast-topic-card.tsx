@@ -29,7 +29,11 @@ export function ForecastTopicCard({ topic, isActive, hideAnswered }: ForecastTop
   return (
     <Card
       id={`forecast-topic-${topic.id}`}
-      className={cn("scroll-mt-6 p-5", isActive ? "border-brand-500 bg-brand-50/30" : undefined)}
+      className={cn(
+        "scroll-mt-6 p-5",
+        "bg-white transition-shadow duration-300",
+        isActive && "border-brand-500 shadow-[0_0_0_4px_rgba(36,104,108,0.08),0_16px_48px_-8px_rgba(36,104,108,0.35)]"
+      )}
     >
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div className="min-w-0">

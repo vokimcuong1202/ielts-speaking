@@ -16,8 +16,8 @@ export function ForecastTopicSidebarItem({ topic, isActive, onSelect }: Forecast
       type="button"
       onClick={() => onSelect(topic.id)}
       className={cn(
-        "flex w-full cursor-pointer items-center justify-between gap-2 rounded-xl border px-4 py-3 text-left text-sm font-semibold transition-colors",
-        isActive ? "border-brand-500 bg-brand-50/50 text-ink-900" : "border-border text-ink-700 hover:border-brand-200"
+        "flex w-full cursor-pointer bg-white items-center justify-between gap-2 rounded-xl border px-4 py-3 text-left text-sm font-semibold transition-colors",
+        isActive ? "border-brand-600 text-ink-900 shadow-[0_0_0_3px_rgba(36,104,108,0.18),0_8px_20px_-8px_rgba(36,104,108,0.45)]" : "border-border text-ink-700 hover:border-brand-200"
       )}
     >
       <span className="min-w-0 truncate">{topic.name}</span>
