@@ -11,15 +11,19 @@ export function PageHeader({ user }: { user: UserProfile }) {
         </h1>
       </div>
 
-      <div className="flex items-center gap-2 rounded-2xl border border-border bg-surface px-4 py-2.5 shadow-[var(--shadow-card)]">
-        <p className="text-sm text-ink-700">
-          Mục tiêu <span className="font-bold text-ink-900">{user.goalBand.toFixed(1)}</span> · thi{" "}
-          {user.examDateLabel}
-        </p>
-        <Badge variant="brand" size="md">
-          còn {user.daysUntilExam} ngày
-        </Badge>
-      </div>
+      {user.goalBand !== null && (
+        <div className="flex items-center gap-2 rounded-2xl border border-border bg-surface px-4 py-2.5 shadow-[var(--shadow-card)]">
+          <p className="text-sm text-ink-700">
+            Mục tiêu <span className="font-bold text-ink-900">{user.goalBand.toFixed(1)}</span>
+            {user.examDateLabel && <> · thi {user.examDateLabel}</>}
+          </p>
+          {user.daysUntilExam !== null && (
+            <Badge variant="brand" size="md">
+              còn {user.daysUntilExam} ngày
+            </Badge>
+          )}
+        </div>
+      )}
     </div>
   );
 }

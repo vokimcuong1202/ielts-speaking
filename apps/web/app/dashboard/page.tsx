@@ -1,5 +1,7 @@
 "use client";
 
+import { useEffect } from "react";
+import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { LoadingIndicator } from "@/components/layout/loading-screen";
 import { PageHeader } from "@/components/dashboard/page-header";
@@ -10,9 +12,16 @@ import { WeekStreakCard } from "@/components/dashboard/week-streak-card";
 import { ForecastPracticeCard } from "@/components/dashboard/forecast-practice-card";
 import { VocabularyCard } from "@/components/dashboard/vocabulary-card";
 import { useDashboardHome } from "@/hooks/use-dashboard-home";
+import { useAuthStore } from "@/stores/auth.store";
 
 export default function DashboardPage() {
+  const router = useRouter();
+  const accessToken = useAuthStore((state) => state.accessToken);
   const { data, isLoading } = useDashboardHome();
+
+  useEffect(() => {
+    if (!accessToken) router.replace("/login");
+  }, [accessToken, router]);
 
   if (isLoading || !data) {
     return (
@@ -42,7 +51,7 @@ export default function DashboardPage() {
 
       <div className="flex flex-col gap-6 lg:flex-row">
         <ForecastPracticeCard questions={data.forecastQuestions} />
-        <VocabularyCard vocabulary={data.vocabulary} />
+        {data.vocabulary && <VocabularyCard vocabulary={data.vocabulary} />}
       </div>
     </AppShell>
   );

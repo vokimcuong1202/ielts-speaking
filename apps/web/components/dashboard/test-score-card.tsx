@@ -19,11 +19,13 @@ export function TestScoreCard({ score }: { score: TestScoreSummary }) {
 
       <div className="mt-8 flex flex-col items-center text-center">
         <p className="mt- 4 text-xs font-semibold uppercase tracking-wide text-ink-400">Band hiện tại</p>
-        <p className="mt-4 text-5xl font-extrabold text-brand-800">{score.currentBand.toFixed(1)}</p>
-        <Badge variant="success" size="md" className="mt-3">
-          <ChevronUp className="h-3.5 w-3.5" strokeWidth={3} />
-          {score.previousDelta.toFixed(1)} so với lần thi trước
-        </Badge>
+        <p className="mt-4 text-5xl font-extrabold text-brand-800">{score.currentBand?.toFixed(1) ?? "—"}</p>
+        {score.previousDelta !== null && (
+          <Badge variant="success" size="md" className="mt-3">
+            <ChevronUp className="h-3.5 w-3.5" strokeWidth={3} />
+            {score.previousDelta.toFixed(1)} so với lần thi trước
+          </Badge>
+        )}
       </div>
 
        <Button variant="primary" size="lg" className="mt-8 w-full">

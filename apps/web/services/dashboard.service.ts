@@ -1,8 +1,8 @@
 import type { DashboardHomeData } from "@/types/dashboard";
-import { getDashboardMockData } from "@/lib/dashboard-mock";
+import { apiFetch } from "@/lib/api-client";
 
 export const dashboardService = {
-  async getHome(): Promise<DashboardHomeData> {
-    return getDashboardMockData();
+  getHome() {
+    return apiFetch<DashboardHomeData>("/dashboard/home");
   },
 };

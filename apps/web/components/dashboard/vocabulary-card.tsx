@@ -27,12 +27,19 @@ export function VocabularyCard({ vocabulary }: { vocabulary: VocabularyOfTheDay 
 
       <div className="mt-4 rounded-xl bg-brand-50 p-4">
         <p className="text-lg font-bold text-brand-800">
-          {vocabulary.word} <span className="text-sm font-normal text-ink-500">{vocabulary.phonetic}</span>
+          {vocabulary.word}{" "}
+          {vocabulary.phonetic && <span className="text-sm font-normal text-ink-500">{vocabulary.phonetic}</span>}
         </p>
         <p className="mt-1.5 text-sm text-ink-700">
-          {vocabulary.meaning} — &ldquo;
-          <HighlightedExample sentence={vocabulary.exampleSentence} highlight={vocabulary.highlightWord} />
-          &rdquo;
+          {vocabulary.meaning}
+          {vocabulary.exampleSentence && (
+            <>
+              {" "}
+              — &ldquo;
+              <HighlightedExample sentence={vocabulary.exampleSentence} highlight={vocabulary.highlightWord} />
+              &rdquo;
+            </>
+          )}
         </p>
       </div>
 

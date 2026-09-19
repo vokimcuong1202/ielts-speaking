@@ -1,8 +1,8 @@
 export interface UserProfile {
   name: string;
-  goalBand: number;
-  examDateLabel: string;
-  daysUntilExam: number;
+  goalBand: number | null;
+  examDateLabel: string | null;
+  daysUntilExam: number | null;
   todayLabel: string;
 }
 
@@ -28,13 +28,13 @@ export interface TodaySession {
 }
 
 export interface TestScoreSummary {
-  currentBand: number;
-  previousDelta: number;
+  currentBand: number | null;
+  previousDelta: number | null;
   fullTestsCompleted: number;
   fullTestsRequired: number;
   fullTestDurationMinutes: number;
-  lastAttemptDate: string;
-  lastAttemptBand: number;
+  lastAttemptDate: string | null;
+  lastAttemptBand: number | null;
 }
 
 export interface HeatmapDay {
@@ -78,9 +78,9 @@ export interface VocabularyRelatedWord {
 
 export interface VocabularyOfTheDay {
   word: string;
-  phonetic: string;
+  phonetic: string | null;
   meaning: string;
-  exampleSentence: string;
+  exampleSentence: string | null;
   highlightWord: string;
   relatedWords: VocabularyRelatedWord[];
 }
@@ -92,5 +92,5 @@ export interface DashboardHomeData {
   heatmap: HeatmapData;
   weekStreak: WeekStreak;
   forecastQuestions: ForecastQuestion[];
-  vocabulary: VocabularyOfTheDay;
+  vocabulary: VocabularyOfTheDay | null;
 }
