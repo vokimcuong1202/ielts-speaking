@@ -15,6 +15,7 @@ const badgeVariants = cva("inline-flex items-center gap-1 rounded-full font-semi
       outline: "border border-border-strong text-ink-700",
       scoreLow: "bg-score-low-bg text-score-low-text",
       scoreMid: "bg-score-mid-bg text-score-mid-text",
+      scoreGood: "bg-score-good-bg text-score-good-text",
       scoreHigh: "bg-score-high-bg text-score-high-text",
     },
     size: {

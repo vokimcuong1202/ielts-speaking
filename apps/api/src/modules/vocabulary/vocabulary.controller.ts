@@ -9,7 +9,7 @@ import { VocabularyService } from "./vocabulary.service";
 import { VocabularyOverviewService } from "./vocabulary-overview.service";
 import { VocabularyTopicDetailService } from "./vocabulary-topic-detail.service";
 import { VocabularyOverviewQuery } from "./dto/vocabulary-overview.query";
-import { SRS_STATES, SaveVocabDto, SubmitReviewDto, VOCAB_KINDS } from "./dto/vocabulary.dto";
+import { SRS_STATES, SaveVocabBulkDto, SaveVocabDto, SubmitReviewDto, VOCAB_KINDS } from "./dto/vocabulary.dto";
 
 const toNumber = ({ value }: { value: unknown }) => Number(value);
 
@@ -92,6 +92,11 @@ export class VocabularyController {
   @Post("notebook")
   save(@CurrentUser() user: { userId: string }, @Body() dto: SaveVocabDto) {
     return this.vocabularyService.saveItem(user.userId, dto);
+  }
+
+  @Post("notebook/bulk")
+  saveBulk(@CurrentUser() user: { userId: string }, @Body() dto: SaveVocabBulkDto) {
+    return this.vocabularyService.saveItems(user.userId, dto);
   }
 
   @Delete("notebook/:id")

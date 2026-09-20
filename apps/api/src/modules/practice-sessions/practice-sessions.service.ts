@@ -7,6 +7,7 @@ import { AttemptsRepository } from "./attempts.repository";
 import { QuotaService } from "../quota/quota.service";
 import { CreateSessionDto } from "./dto/create-session.dto";
 import { CreateAttemptDto } from "./dto/create-attempt.dto";
+import { ReportAttemptDto } from "./dto/report-attempt.dto";
 import { TRANSCRIPTION_QUEUE } from "../../infrastructure/queue/queue.module";
 
 @Injectable()
@@ -49,6 +50,12 @@ export class PracticeSessionsService {
     const attempt = await this.attemptsRepository.findDetailForUser(attemptId, userId);
     if (!attempt) throw new NotFoundException("Attempt not found");
     return attempt;
+  }
+
+  /** "Báo lỗi" on an attempt card. */
+  async reportAttempt(userId: string, attemptId: bigint, dto: ReportAttemptDto) {
+    if (!(await this.attemptsRepository.findOwnedId(attemptId, userId))) throw new NotFoundException("Attempt not found");
+    return this.attemptsRepository.reportAttempt(userId, attemptId, dto);
   }
 
   async getResult(userId: string, sessionId: bigint) {

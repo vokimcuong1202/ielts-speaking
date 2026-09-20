@@ -40,18 +40,21 @@
   --color-danger-text: #c4293f;
   --color-danger-border: #f3c6cb;
 
-  /* Score tone rule (see lib/score-tone.ts): under 5 = grey, 5 to under 7 = orange, 7+ = blue */
+  /* Score tone rule (see lib/score-tone.ts): under 5.5 = grey, 5.5-6.0 = orange, 6.5-7.0 = medium green, 7.5+ = dark green */
   --color-score-low: #8b98a1;
   --color-score-mid: #e8780c;
-  --color-score-high: #2563eb;
+  --color-score-good: #3f8f8a;
+  --color-score-high: #1b5458;
 
   /* Light pill fills for the same score tones (skill tags, chips) */
   --color-score-low-bg: #e7ebed;
   --color-score-low-text: #5b6b73;
   --color-score-mid-bg: #fdecc8;
   --color-score-mid-text: #92610a;
-  --color-score-high-bg: #dbe7fd;
-  --color-score-high-text: #1d4ed8;
+  --color-score-good-bg: #d3ebe8;
+  --color-score-good-text: #26706b;
+  --color-score-high-bg: #c5dcdd;
+  --color-score-high-text: #103739;
 
   /* Heatmap intensity scale (0 = no activity → 4 = high activity) */
   --color-heat-0: #e7edef;

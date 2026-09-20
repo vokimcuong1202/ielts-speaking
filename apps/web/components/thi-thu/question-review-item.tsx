@@ -11,7 +11,7 @@ export function QuestionReviewItem({ question }: { question: QuestionReview }) {
     <div
       className={cn(
         "rounded-xl border p-4",
-        question.isWeakest ? "border-warning-text/30 bg-warning-bg" : "border-border"
+        question.isWeakest ? "border-warning-text/20 bg-warning-bg/40" : "border-border"
       )}
     >
       <div className="flex items-start gap-3">
@@ -27,11 +27,6 @@ export function QuestionReviewItem({ question }: { question: QuestionReview }) {
                 Câu {question.index} · {question.question}
               </p>
             </div>
-            {question.band != null ? (
-              <a href="#" className="shrink-0 text-xs font-semibold text-brand-700 hover:underline">
-                Cải thiện câu này →
-              </a>
-            ) : null}
           </div>
 
           <div className="mt-3 flex items-start gap-3">
@@ -63,7 +58,10 @@ export function QuestionReviewItem({ question }: { question: QuestionReview }) {
 
         {question.band != null ? (
           <div className="flex shrink-0 flex-col items-center gap-1">
-            <BandBadge band={question.band} status="completed" size={44} />
+            <a href="#" className="mb-1 text-xs font-semibold text-brand-700 hover:underline">
+              Cải thiện câu này →
+            </a>
+            <BandBadge band={question.band} status="completed" size={66} />
             <a href="#" className="text-xs font-medium text-ink-400 hover:text-ink-700">
               Báo lỗi
             </a>

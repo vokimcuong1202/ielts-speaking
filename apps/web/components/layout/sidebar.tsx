@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { BookMarked, Headphones, Home, LineChart, Sparkles } from "lucide-react";
 import { SidebarNavItem } from "./sidebar-nav-item";
@@ -25,12 +26,12 @@ export function Sidebar({ userName, progress }: { userName: string; progress: Si
   return (
     <aside className="sticky top-0 flex h-screen w-64 shrink-0 flex-col justify-between border-r border-border bg-surface px-4 py-5">
       <div>
-        <div className="flex items-center gap-2 px-2">
+        <Link href="/dashboard" aria-label="Trang chủ" className="flex w-fit cursor-pointer items-center gap-2 px-2">
           <span className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand-700 text-sm font-bold text-white">
             S
           </span>
           <span className="text-base font-bold text-ink-900">SpeakPrep</span>
-        </div>
+        </Link>
 
         <nav className="mt-8 flex flex-col gap-1">
           {primaryNavItems.map((item) => (

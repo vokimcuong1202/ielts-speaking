@@ -198,6 +198,10 @@ export class ProgressRepository {
     });
   }
 
+  countScoredAttempts(userId: string) {
+    return this.prisma.attempt.count({ where: { userId, status: "scored" } });
+  }
+
   countDueVocab(userId: string, today: Date) {
     return this.prisma.userVocab.count({
       where: { userId, dueOn: { lte: today }, state: { not: "suspended" } },

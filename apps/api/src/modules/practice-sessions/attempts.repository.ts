@@ -30,6 +30,19 @@ export class AttemptsRepository {
     });
   }
 
+  findOwnedId(id: bigint, userId: string) {
+    return this.prisma.attempt.findFirst({ where: { id, userId }, select: { id: true } });
+  }
+
+  /** One open report per user per attempt: reporting again just updates the reason / note. */
+  async reportAttempt(userId: string, attemptId: bigint, data: { reason?: string; note?: string }) {
+    const existing = await this.prisma.report.findFirst({
+      where: { reporterId: userId, targetKind: "attempt", targetId: attemptId, status: "open" },
+    });
+    if (existing) return this.prisma.report.update({ where: { id: existing.id }, data });
+    return this.prisma.report.create({ data: { reporterId: userId, targetKind: "attempt", targetId: attemptId, ...data } });
+  }
+
   findByIdWithContext(id: bigint) {
     return this.prisma.attempt.findUnique({
       where: { id },

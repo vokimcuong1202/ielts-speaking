@@ -110,6 +110,23 @@ export class VocabularyRepository {
     });
   }
 
+  saveMany(userId: string, vocabItemIds: bigint[], data: { source: VocabSource; sourceQuestionId?: bigint; sourceAttemptId?: bigint }) {
+    return this.prisma.$transaction(
+      vocabItemIds.map((vocabItemId) =>
+        this.prisma.userVocab.upsert({
+          where: { userId_vocabItemId: { userId, vocabItemId } },
+          create: { userId, vocabItemId, ...data },
+          update: {},
+          include: { vocabItem: true },
+        }),
+      ),
+    );
+  }
+
+  countItems(ids: bigint[]) {
+    return this.prisma.vocabItem.count({ where: { id: { in: ids } } });
+  }
+
   remove(id: bigint, userId: string) {
     return this.prisma.userVocab.deleteMany({ where: { id, userId } });
   }

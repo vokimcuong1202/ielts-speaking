@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from "@nestjs/comm
 import { SrsState, VocabKind } from "../../../../../database/generated/client";
 import { addDays, localDate } from "../../common/utils/local-date";
 import { VocabularyRepository } from "./vocabulary.repository";
-import { SaveVocabDto, SubmitReviewDto } from "./dto/vocabulary.dto";
+import { SaveVocabBulkDto, SaveVocabDto, SubmitReviewDto } from "./dto/vocabulary.dto";
 import { isKnown, schedule } from "./srs";
 
 const DAILY_PICK_COUNT = 5;
@@ -68,6 +68,19 @@ export class VocabularyService {
     }
     return this.vocabularyRepository.save(userId, {
       vocabItemId: dto.vocabItemId,
+      source: dto.source ?? "question_panel",
+      sourceQuestionId: dto.sourceQuestionId,
+      sourceAttemptId: dto.sourceAttemptId,
+    });
+  }
+
+  /** "Lưu cả N": idempotent, all-or-nothing when any id is unknown. */
+  async saveItems(userId: string, dto: SaveVocabBulkDto) {
+    const ids = [...new Set(dto.vocabItemIds)];
+    if ((await this.vocabularyRepository.countItems(ids)) !== ids.length) {
+      throw new NotFoundException("One or more vocabulary items not found");
+    }
+    return this.vocabularyRepository.saveMany(userId, ids, {
       source: dto.source ?? "question_panel",
       sourceQuestionId: dto.sourceQuestionId,
       sourceAttemptId: dto.sourceAttemptId,

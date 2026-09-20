@@ -7,6 +7,7 @@ import { BigIntId } from "../../common/decorators/bigint-id.decorator";
 import { ParseBigIntPipe } from "../../common/pipes/parse-bigint.pipe";
 import { IELTS_PARTS, IeltsPartValue } from "../topic-groups/dto/create-topic-group.dto";
 import { QuestionsService } from "./questions.service";
+import { QuestionPracticeService } from "./question-practice.service";
 
 class ListQuestionsQuery {
   @IsOptional()
@@ -45,11 +46,20 @@ class QuestionVocabQuery {
 @Controller("questions")
 @UseGuards(JwtAuthGuard)
 export class QuestionsController {
-  constructor(private readonly questionsService: QuestionsService) {}
+  constructor(
+    private readonly questionsService: QuestionsService,
+    private readonly questionPracticeService: QuestionPracticeService,
+  ) {}
 
   @Get()
   list(@Query() query: ListQuestionsQuery) {
     return this.questionsService.list(query);
+  }
+
+  /** Everything the question practice page renders (web `ForecastQuestionPractice`). `:idOrSlug` = id or slug. */
+  @Get(":idOrSlug/practice")
+  practice(@CurrentUser() user: { userId: string }, @Param("idOrSlug") idOrSlug: string) {
+    return this.questionPracticeService.getPractice(user.userId, idOrSlug);
   }
 
   @Get(":id")

@@ -14,7 +14,7 @@ export function TodaySessionCard({ session }: { session: TodaySession }) {
   const [activeTipId, setActiveTipId] = useState(defaultTipId);
 
   return (
-    <Card className="p-6">
+    <Card className="flex h-full flex-col p-6">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
           <Badge variant="outline" size="sm">
@@ -66,7 +66,7 @@ export function TodaySessionCard({ session }: { session: TodaySession }) {
         </div>
       </div>
 
-      <div className="mt-5 flex flex-col gap-2.5 sm:flex-row">
+      <div className="mt-auto flex flex-col gap-2.5 pt-5 sm:flex-row">
         {session.parts.map((part) => (
           <PartStep
             key={part.id}

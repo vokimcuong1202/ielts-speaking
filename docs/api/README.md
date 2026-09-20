@@ -18,6 +18,7 @@ Numeric columns (bands, ease, probability) are JSON numbers. Dates are ISO strin
 | POST | /topic-groups | Create a group (**any authenticated user** — there is no admin role in the schema yet) |
 | GET | /questions?part&topicGroupId&parentQuestionId&search&limit | Question list |
 | GET | /questions/:id | Question + follow-ups, idea frames, sample answers, my progress |
+| GET | /questions/:idOrSlug/practice | Question practice page (`/forecast/:part/:question`): `{ id, slug, partId, partLabel, title, position, total, topicLabel, isBookmarked, quota.remainingToday, attempts[], vocabularyByBand{6,7,8}, ideaSteps, sampleAnswers, previous, next }` (web `ForecastQuestionPractice`). `attempts` are latest first; a scored attempt carries `skills`, `transcript` diff segments (`plain`/`added`/`removed`) and a `shortened` rewrite with its tip; an unscored one has `status` `grading`/`invalid`/`failed`. Vocab items carry `saved` / `userVocabId`. `previous`/`next` walk the follow-ups of the same Part 2 card (Part 3) or the same part + topic group, and use slugs as ids |
 | GET | /questions/:id/vocab?bandTier= | "Từ & cụm nên dùng" panel |
 | GET | /questions/:id/attempts | My attempt history on this question |
 | PUT/DELETE | /questions/:id/bookmark | "Lưu câu này" |
@@ -32,6 +33,7 @@ Numeric columns (bands, ease, probability) are JSON numbers. Dates are ISO strin
 | GET | /practice-sessions/history | My sessions |
 | GET | /practice-sessions/:id | Session with attempts and scores |
 | GET | /attempts/:id | Result page: scores, errors, rewrite, transcript spans, question |
+| POST | /attempts/:id/reports | "Báo lỗi": `{ reason?: transcript_wrong\|score_wrong\|audio_problem\|other, note? }`. One open report per user per attempt (repeat calls update it). 404 for attempts that are not yours |
 | POST | /audio/upload | Upload audio, returns storage URL |
 | POST | /mock-tests | `{ part?, voiceCode?, label?, retakeOfId? }` → mock test + `sessionId` to post attempts to |
 | GET | /mock-tests | My mock tests |
@@ -50,6 +52,7 @@ Numeric columns (bands, ease, probability) are JSON numbers. Dates are ISO strin
 | GET | /vocabulary/daily | Today's picks (created on first call each day) |
 | GET | /vocabulary/notebook?state&sourceQuestionId | Saved words + `dueCount` |
 | POST | /vocabulary/notebook | `{ vocabItemId, source?, sourceQuestionId?, sourceAttemptId? }` (idempotent) |
+| POST | /vocabulary/notebook/bulk | "Lưu cả N": `{ vocabItemIds[] (1–50), source?, sourceQuestionId?, sourceAttemptId? }` (idempotent, all-or-nothing on unknown ids) → saved entries |
 | DELETE | /vocabulary/notebook/:id | |
 | POST | /vocabulary/review/sessions | `{ limit? }` → session + due queue |
 | POST | /vocabulary/review/sessions/:id/reviews | `{ userVocabId, rating: again\|hard\|good\|easy, revealedMs? }` |

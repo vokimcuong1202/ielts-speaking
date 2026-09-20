@@ -6,6 +6,7 @@ import { PracticeSessionsService } from "./practice-sessions.service";
 import { CreateSessionDto } from "./dto/create-session.dto";
 import { CreateAttemptDto } from "./dto/create-attempt.dto";
 import { FinishSessionDto } from "./dto/finish-session.dto";
+import { ReportAttemptDto } from "./dto/report-attempt.dto";
 
 @Controller("practice-sessions")
 @UseGuards(JwtAuthGuard)
@@ -55,6 +56,15 @@ export class AttemptsController {
   @Get(":id")
   detail(@CurrentUser() user: { userId: string }, @Param("id", ParseBigIntPipe) id: bigint) {
     return this.sessionsService.getAttempt(user.userId, id);
+  }
+
+  @Post(":id/reports")
+  report(
+    @CurrentUser() user: { userId: string },
+    @Param("id", ParseBigIntPipe) id: bigint,
+    @Body() dto: ReportAttemptDto,
+  ) {
+    return this.sessionsService.reportAttempt(user.userId, id, dto);
   }
 }
 

@@ -37,7 +37,7 @@ export default function DashboardPage() {
       <PageHeader user={data.user} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 [&>*]:h-full">
           <TodaySessionCard session={data.todaySession} />
         </div>
         <TestScoreCard score={data.testScore} />

@@ -21,6 +21,34 @@
     {
       "key": "token",
       "value": ""
+    },
+    {
+      "key": "questionSlug",
+      "value": "why-are-some-students-popular"
+    },
+    {
+      "key": "questionId",
+      "value": ""
+    },
+    {
+      "key": "attemptId",
+      "value": ""
+    },
+    {
+      "key": "vocabItemId",
+      "value": ""
+    },
+    {
+      "key": "userVocabId",
+      "value": ""
+    },
+    {
+      "key": "sessionId",
+      "value": ""
+    },
+    {
+      "key": "audioUrl",
+      "value": ""
     }
   ],
   "item": [
@@ -568,6 +596,363 @@
               ]
             }
           }
+        }
+      ]
+    },
+    {
+      "name": "Question practice page",
+      "description": "Everything behind /forecast/:part/:question. Run in order: 'Practice page data' stores questionId, attemptId and vocabItemId used by the requests below it.",
+      "item": [
+        {
+          "name": "Practice page data",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/questions/{{questionSlug}}/practice",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "questions",
+                "{{questionSlug}}",
+                "practice"
+              ]
+            },
+            "description": "One call for the whole page: question, prev/next + position, my attempts (latest first, with skills, transcript diff and rewrite), suggested vocab by band tab with saved state, idea steps, sample answers, bookmark, remaining speaking turns. `:idOrSlug` = numeric id or slug."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const d = pm.response.json();",
+                  "pm.test('has attempts + vocab', () => pm.expect(d.attempts).to.be.an('array') && pm.expect(d.vocabularyByBand).to.have.keys('6','7','8'));",
+                  "pm.collectionVariables.set('questionId', d.id);",
+                  "if (d.attempts[0]) pm.collectionVariables.set('attemptId', d.attempts[0].id);",
+                  "const unsaved = Object.values(d.vocabularyByBand).flat().find(v => !v.saved);",
+                  "if (unsaved) pm.collectionVariables.set('vocabItemId', unsaved.id);",
+                  "const saved = Object.values(d.vocabularyByBand).flat().find(v => v.saved);",
+                  "if (saved) pm.collectionVariables.set('userVocabId', saved.userVocabId);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Practice page data – by numeric id",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/questions/38/practice",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "questions",
+                "38",
+                "practice"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Bookmark question (Lưu câu này)",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/questions/{{questionId}}/bookmark",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "questions",
+                "{{questionId}}",
+                "bookmark"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Remove bookmark",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/questions/{{questionId}}/bookmark",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "questions",
+                "{{questionId}}",
+                "bookmark"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Save suggested word",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vocabulary/notebook",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vocabulary",
+                "notebook"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vocabItemId\": \"{{vocabItemId}}\",\n  \"source\": \"question_panel\",\n  \"sourceQuestionId\": \"{{questionId}}\"\n}"
+            },
+            "description": "Idempotent. The response `id` is the userVocabId needed to remove the word."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const id = pm.response.json().id;",
+                  "if (id) pm.collectionVariables.set('userVocabId', id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Save several words (Lưu cả N)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vocabulary/notebook/bulk",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vocabulary",
+                "notebook",
+                "bulk"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"vocabItemIds\": [\n    \"{{vocabItemId}}\"\n  ],\n  \"source\": \"question_panel\",\n  \"sourceQuestionId\": \"{{questionId}}\"\n}"
+            },
+            "description": "Idempotent, max 50 ids. 404 (and nothing saved) if any id is unknown."
+          }
+        },
+        {
+          "name": "Remove saved word",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/vocabulary/notebook/{{userVocabId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vocabulary",
+                "notebook",
+                "{{userVocabId}}"
+              ]
+            }
+          }
+        },
+        {
+          "name": "Report an error (Báo lỗi)",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/attempts/{{attemptId}}/reports",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "attempts",
+                "{{attemptId}}",
+                "reports"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"reason\": \"transcript_wrong\",\n  \"note\": \"Bản ghi chép sai chữ 'popular'.\"\n}"
+            },
+            "description": "reason: transcript_wrong | score_wrong | audio_problem | other (all optional). Reporting the same attempt again updates the open report."
+          }
+        },
+        {
+          "name": "Record 1/4 – create session",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/practice-sessions",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "practice-sessions"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"mode\": \"practice_question\",\n  \"part\": \"part3\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const id = pm.response.json().id;",
+                  "if (id) pm.collectionVariables.set('sessionId', id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Record 2/4 – upload audio",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/audio/upload",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "audio",
+                "upload"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                }
+              ]
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const url = pm.response.json().url;",
+                  "if (url) pm.collectionVariables.set('audioUrl', url);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Record 3/4 – create attempt",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/practice-sessions/{{sessionId}}/attempts",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "practice-sessions",
+                "{{sessionId}}",
+                "attempts"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"questionId\": \"{{questionId}}\",\n  \"audioUrl\": \"{{audioUrl}}\",\n  \"durationMs\": 30000\n}"
+            },
+            "description": "Consumes one speaking turn and queues transcription → scoring. The attempt is `uploaded` until scored."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const id = pm.response.json().id;",
+                  "if (id) pm.collectionVariables.set('attemptId', id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Record 4/4 – poll until scored",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/questions/{{questionSlug}}/practice",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "questions",
+                "{{questionSlug}}",
+                "practice"
+              ]
+            },
+            "description": "Repeat until attempts[0].status is `scored` (or `invalid` / `failed`). The web app polls every 2s."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const a = pm.response.json().attempts[0];",
+                  "pm.test('latest attempt status: ' + a.status, () => pm.expect(a.status).to.be.a('string'));"
+                ]
+              }
+            }
+          ]
         }
       ]
     },

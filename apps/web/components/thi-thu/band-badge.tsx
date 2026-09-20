@@ -36,7 +36,9 @@ export function BandBadge({ band, status, gradingPercent = 0, size = 56 }: BandB
       className={cn("flex items-center justify-center rounded-full text-white shadow-sm", SCORE_TONE_BG_CLASS[tone])}
       style={{ width: size, height: size }}
     >
-      <span className="text-lg font-bold">{band?.toFixed(1)}</span>
+      <span className="font-extrabold leading-none" style={{ fontSize: Math.round(size * 0.43) }}>
+        {band?.toFixed(1)}
+      </span>
     </div>
   );
 }

@@ -74,4 +74,68 @@ export class QuestionsRepository {
   exists(id: bigint) {
     return this.prisma.question.count({ where: { id, isActive: true } }).then((count) => count > 0);
   }
+
+  /** Accepts a numeric id or the unique slug the web app uses in its URLs. */
+  findForPractice(idOrSlug: string) {
+    const where = /^\d+$/.test(idOrSlug) ? { id: BigInt(idOrSlug) } : { slug: idOrSlug };
+    return this.prisma.question.findFirst({
+      where: { ...where, isActive: true },
+      include: {
+        topicGroup: true,
+        questionIdeaFrames: { orderBy: { stepNo: "asc" } },
+        sampleAnswers: { orderBy: { band: "asc" } },
+      },
+    });
+  }
+
+  /**
+   * The questions a learner walks through with the prev/next arrows: the follow-ups of the same Part 2
+   * cue card for Part 3, otherwise every question of the same part and topic group.
+   */
+  findSiblings(question: { part: IeltsPart; topicGroupId: bigint | null; parentQuestionId: bigint | null }) {
+    return this.prisma.question.findMany({
+      where: {
+        isActive: true,
+        ...(question.parentQuestionId
+          ? { parentQuestionId: question.parentQuestionId }
+          : { part: question.part, topicGroupId: question.topicGroupId, parentQuestionId: null }),
+      },
+      orderBy: { id: "asc" },
+      select: { id: true, slug: true, textEn: true },
+    });
+  }
+
+  findPracticeAttempts(userId: string, questionId: bigint) {
+    return this.prisma.attempt.findMany({
+      where: { userId, questionId },
+      orderBy: { attemptNo: "desc" },
+      take: 50,
+      include: {
+        attemptScores: true,
+        attemptTranscriptSpans: { orderBy: { charStart: "asc" } },
+        attemptRewrite: true,
+      },
+    });
+  }
+
+  findPracticeVocab(questionId: bigint) {
+    return this.prisma.questionVocab.findMany({
+      where: { questionId },
+      orderBy: [{ bandTier: "asc" }, { isCore: "desc" }, { sortOrder: "asc" }],
+      include: { vocabItem: true },
+    });
+  }
+
+  findSavedVocab(userId: string, vocabItemIds: bigint[]) {
+    return this.prisma.userVocab.findMany({
+      where: { userId, vocabItemId: { in: vocabItemIds } },
+      select: { id: true, vocabItemId: true },
+    });
+  }
+
+  findTimezone(userId: string) {
+    return this.prisma.user
+      .findUnique({ where: { id: userId }, select: { timezone: true } })
+      .then((user) => user?.timezone ?? "Asia/Ho_Chi_Minh");
+  }
 }

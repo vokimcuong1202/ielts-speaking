@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { cn } from "@/lib/cn";
+import { getScoreTone, SCORE_TONE_BADGE_VARIANT } from "@/lib/score-tone";
 import { ForecastTopicQuestionGrid } from "./forecast-topic-question-grid";
 import { ForecastTopicVocabularyFooter } from "./forecast-topic-vocabulary-footer";
 import { ForecastTopicPracticeSummaryRow } from "./forecast-topic-practice-summary";
@@ -47,7 +48,7 @@ export function ForecastTopicCard({ topic, isActive, hideAnswered }: ForecastTop
               <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
             ) : null}
             {topic.practiceSummary ? (
-              <Badge variant="warning" size="sm">
+              <Badge variant={SCORE_TONE_BADGE_VARIANT[getScoreTone(topic.practiceSummary.latestBand)]} size="sm">
                 band gần nhất {topic.practiceSummary.latestBand.toFixed(1)}
               </Badge>
             ) : null}

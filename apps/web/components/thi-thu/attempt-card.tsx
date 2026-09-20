@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import { ChevronDown, Download, Play, RotateCcw, Share2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -11,6 +12,7 @@ import { QuestionReviewItem } from "./question-review-item";
 import type { TestAttempt } from "@/types/test-history";
 
 export function AttemptCard({ attempt }: { attempt: TestAttempt }) {
+  const router = useRouter();
   const [isExpanded, setIsExpanded] = useState(false);
   const canExpand = Boolean(attempt.detail);
   const hasQuestions = Boolean(attempt.detail?.questions.length);
@@ -89,7 +91,7 @@ export function AttemptCard({ attempt }: { attempt: TestAttempt }) {
             </span>
           ) : null}
           <div className="mt-1">
-            <BandBadge status={attempt.status} band={attempt.band} gradingPercent={attempt.gradingPercent} />
+            <BandBadge status={attempt.status} band={attempt.band} gradingPercent={attempt.gradingPercent} size={84} />
           </div>
           {canExpand ? (
             <span className="flex items-center gap-0.5 text-xs font-semibold text-ink-500">
@@ -133,7 +135,16 @@ export function AttemptCard({ attempt }: { attempt: TestAttempt }) {
                       Tải bản ghi
                     </Button>
                   </div>
-                  <Button variant="primary" size="sm" className="rounded-full">
+                  <Button
+                    variant="primary"
+                    size="sm"
+                    className="rounded-full"
+                    onClick={() =>
+                      router.push(
+                        `/forecast/${attempt.testType === "full" ? "part1" : attempt.testType}/why-are-some-students-popular`
+                      )
+                    }
+                  >
                     <RotateCcw className="h-3.5 w-3.5" strokeWidth={2.5} />
                     Thi lại {attempt.title.replace(/^Test /i, "")}
                   </Button>

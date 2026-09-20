@@ -29,6 +29,11 @@ class LimitQuery {
 export class ProgressController {
   constructor(private readonly progressService: ProgressService) {}
 
+  @Get("sidebar")
+  sidebar(@CurrentUser() user: { userId: string }) {
+    return this.progressService.getSidebarProgress(user.userId);
+  }
+
   @Get("dashboard")
   dashboard(@CurrentUser() user: { userId: string }) {
     return this.progressService.getDashboard(user.userId);

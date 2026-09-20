@@ -1,4 +1,5 @@
-import { IsIn, IsInt, IsOptional, Max, Min } from "class-validator";
+import { Transform } from "class-transformer";
+import { ArrayMaxSize, ArrayNotEmpty, IsArray, IsIn, IsInt, IsOptional, Max, Min, ValidateBy, buildMessage } from "class-validator";
 import { BigIntId } from "../../../common/decorators/bigint-id.decorator";
 
 export const VOCAB_SOURCES = ["question_panel", "topic_library", "mock_feedback", "manual", "daily_pick"] as const;
@@ -9,6 +10,37 @@ export const VOCAB_KINDS = ["word", "collocation", "idiom", "phrasal_verb", "sen
 export class SaveVocabDto {
   @BigIntId()
   vocabItemId: bigint;
+
+  @IsOptional()
+  @IsIn(VOCAB_SOURCES)
+  source?: (typeof VOCAB_SOURCES)[number];
+
+  @IsOptional()
+  @BigIntId()
+  sourceQuestionId?: bigint;
+
+  @IsOptional()
+  @BigIntId()
+  sourceAttemptId?: bigint;
+}
+
+export class SaveVocabBulkDto {
+  @IsArray()
+  @ArrayNotEmpty()
+  @ArrayMaxSize(50)
+  @Transform(({ value }) =>
+    Array.isArray(value)
+      ? value.map((id) => ((typeof id === "string" || typeof id === "number") && /^\d+$/.test(String(id)) ? BigInt(id) : id))
+      : value,
+  )
+  @ValidateBy(
+    {
+      name: "isBigIntIdList",
+      validator: { validate: (value) => Array.isArray(value) && value.every((id) => typeof id === "bigint" && id > 0n) },
+    },
+    { message: buildMessage((eachPrefix) => `${eachPrefix}$property must be a list of positive integer ids`) },
+  )
+  vocabItemIds: bigint[];
 
   @IsOptional()
   @IsIn(VOCAB_SOURCES)

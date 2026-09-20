@@ -23,6 +23,7 @@ export function useAudioRecorder() {
       if (!recorder) return;
 
       recorder.onstop = () => {
+        recorder.stream.getTracks().forEach((track) => track.stop()); // release the microphone
         setIsRecording(false);
         resolve(new Blob(chunksRef.current, { type: "audio/webm" }));
       };
