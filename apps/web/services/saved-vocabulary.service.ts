@@ -21,6 +21,14 @@ export const savedVocabularyService = {
     });
   },
 
+  /** A phrase the learner selected themselves, with the meaning they confirmed. */
+  saveCustom(term: string, meaningVi: string, sourceQuestionId: string) {
+    return apiFetch<NotebookEntry>("/vocabulary/notebook/custom", {
+      method: "POST",
+      body: JSON.stringify({ term, meaningVi, sourceQuestionId }),
+    });
+  },
+
   remove(userVocabId: string) {
     return apiFetch<void>(`/vocabulary/notebook/${userVocabId}`, { method: "DELETE" });
   },

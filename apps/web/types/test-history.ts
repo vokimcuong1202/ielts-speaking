@@ -36,6 +36,9 @@ export interface QuestionReview {
   id: string;
   index: number;
   question: string;
+  /** Where "Cải thiện câu này" goes: /forecast/<questionPart>/<questionSlug>. */
+  questionSlug?: string;
+  questionPart?: TestType;
   isWeakest?: boolean;
   band?: number;
   skills?: SkillScores;

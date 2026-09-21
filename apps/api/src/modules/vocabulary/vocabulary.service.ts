@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from "@nestjs/comm
 import { SrsState, VocabKind } from "../../../../../database/generated/client";
 import { addDays, localDate } from "../../common/utils/local-date";
 import { VocabularyRepository } from "./vocabulary.repository";
-import { SaveVocabBulkDto, SaveVocabDto, SubmitReviewDto } from "./dto/vocabulary.dto";
+import { SaveCustomVocabDto, SaveVocabBulkDto, SaveVocabDto, SubmitReviewDto } from "./dto/vocabulary.dto";
 import { isKnown, schedule } from "./srs";
 
 const DAILY_PICK_COUNT = 5;
@@ -71,6 +71,18 @@ export class VocabularyService {
       source: dto.source ?? "question_panel",
       sourceQuestionId: dto.sourceQuestionId,
       sourceAttemptId: dto.sourceAttemptId,
+    });
+  }
+
+  /** Bôi đen → lưu vào sổ: one word is a word, a short run a collocation, anything longer a sentence frame. */
+  saveCustomItem(userId: string, dto: SaveCustomVocabDto) {
+    const term = dto.term.trim().replace(/\s+/g, " ");
+    const wordCount = term.split(" ").length;
+    return this.vocabularyRepository.saveCustom(userId, {
+      term,
+      meaningVi: dto.meaningVi.trim(),
+      kind: wordCount === 1 ? "word" : wordCount <= 6 ? "collocation" : "sentence_frame",
+      sourceQuestionId: dto.sourceQuestionId,
     });
   }
 

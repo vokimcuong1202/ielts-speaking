@@ -96,6 +96,7 @@ export class QuestionPracticeService {
         attempt.recordedAt,
       ),
       durationLabel: formatDuration(attempt.durationMs),
+      audioUrl: attempt.audioUrl,
       band: scored ? (attempt.bandOverall?.toNumber() ?? null) : null,
       skills: scored
         ? SKILLS.map(({ criterion, id, label }) => ({

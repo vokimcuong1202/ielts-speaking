@@ -394,6 +394,7 @@ model Question {
   followUps            Question[]             @relation("questionsToquestions")
   topicGroup           TopicGroup?            @relation(fields: [topicGroupId], references: [id], onDelete: NoAction, onUpdate: NoAction)
   sampleAnswers        SampleAnswer[]
+  userQuestionNotes    UserQuestionNote[]
   userQuestionProgress UserQuestionProgress[]
   userVocab            UserVocab[]
 
@@ -497,6 +498,19 @@ model UserGoal {
   user                 User      @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
 
   @@map("user_goals")
+}
+
+/// The learner's own sample answer for a question ("Ghi chú – tạo câu mẫu của riêng bạn"). One per user and question.
+model UserQuestionNote {
+  userId     String   @map("user_id") @db.Uuid
+  questionId BigInt   @map("question_id")
+  body       String
+  updatedAt  DateTime @default(now()) @map("updated_at") @db.Timestamptz(6)
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade, onUpdate: NoAction)
+
+  @@id([userId, questionId])
+  @@map("user_question_notes")
 }
 
 model UserQuestionProgress {
@@ -632,6 +646,7 @@ model User {
   subscriptions        Subscription[]
   userErrorStats       UserErrorStat[]
   userGoal             UserGoal?
+  userQuestionNotes    UserQuestionNote[]
   userQuestionProgress UserQuestionProgress[]
   userRecommendations  UserRecommendation[]
   userStats            UserStats?

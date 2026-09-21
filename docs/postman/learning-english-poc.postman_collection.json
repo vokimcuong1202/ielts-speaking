@@ -953,6 +953,157 @@
               }
             }
           ]
+        },
+        {
+          "name": "AI hỗ trợ – support data",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/questions/{{questionSlug}}/support",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "questions",
+                "{{questionSlug}}",
+                "support"
+              ]
+            },
+            "description": "Sample answers (by band) with the suggested phrases each one contains and their saved state, plus my note. `providers` says whether translation / pronunciation are still mock."
+          }
+        },
+        {
+          "name": "AI hỗ trợ – save my note (Ghi chú)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/questions/{{questionSlug}}/note",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "questions",
+                "{{questionSlug}}",
+                "note"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"body\": \"People like students who are kind and funny.\"\n}"
+            },
+            "description": "Creates or replaces my own sample answer for the question (1–2000 chars)."
+          }
+        },
+        {
+          "name": "AI hỗ trợ – delete my note",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/questions/{{questionSlug}}/note",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "questions",
+                "{{questionSlug}}",
+                "note"
+              ]
+            }
+          }
+        },
+        {
+          "name": "AI hỗ trợ – translate selection",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/translations",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "translations"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"text\": \"look up to\"\n}"
+            },
+            "description": "Answered from the vocabulary catalogue when the phrase is known (`source: dictionary`); otherwise `translation` is null until a translation provider is wired in."
+          }
+        },
+        {
+          "name": "AI hỗ trợ – save selection to notebook",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{baseUrl}}/vocabulary/notebook/custom",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "vocabulary",
+                "notebook",
+                "custom"
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"term\": \"tend to\",\n  \"meaningVi\": \"có xu hướng\",\n  \"sourceQuestionId\": \"{{questionId}}\"\n}"
+            },
+            "description": "Adds (or reuses) the phrase in the catalogue and puts it in my notebook with source `manual`. Response `id` is the userVocabId."
+          }
+        },
+        {
+          "name": "AI hỗ trợ – pronunciation check",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/pronunciation-checks",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "pronunciation-checks"
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": []
+                },
+                {
+                  "key": "text",
+                  "type": "text",
+                  "value": "stand out from the crowd"
+                }
+              ]
+            },
+            "description": "Multipart: `file` (recording, ≤5MB, not stored) + `text` (what the learner tried to say). Returns score 0–100 and per-word status. Scoring is a mock until a real provider is wired in."
+          }
         }
       ]
     },

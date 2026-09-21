@@ -1,5 +1,5 @@
 import { Transform } from "class-transformer";
-import { ArrayMaxSize, ArrayNotEmpty, IsArray, IsIn, IsInt, IsOptional, Max, Min, ValidateBy, buildMessage } from "class-validator";
+import { ArrayMaxSize, ArrayNotEmpty, IsArray, IsIn, IsInt, IsOptional, IsString, Max, MaxLength, Min, MinLength, ValidateBy, buildMessage } from "class-validator";
 import { BigIntId } from "../../../common/decorators/bigint-id.decorator";
 
 export const VOCAB_SOURCES = ["question_panel", "topic_library", "mock_feedback", "manual", "daily_pick"] as const;
@@ -53,6 +53,23 @@ export class SaveVocabBulkDto {
   @IsOptional()
   @BigIntId()
   sourceAttemptId?: bigint;
+}
+
+/** A phrase the learner selected in an answer ("Bôi đen … để dịch và lưu vào sổ"), with the meaning they confirmed. */
+export class SaveCustomVocabDto {
+  @IsString()
+  @MinLength(1)
+  @MaxLength(300)
+  term: string;
+
+  @IsString()
+  @MinLength(1)
+  @MaxLength(500)
+  meaningVi: string;
+
+  @IsOptional()
+  @BigIntId()
+  sourceQuestionId?: bigint;
 }
 
 export class SubmitReviewDto {

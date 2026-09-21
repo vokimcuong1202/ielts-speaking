@@ -20,6 +20,8 @@ export interface QuestionAttempt {
   status: QuestionAttemptStatus;
   dateLabel: string;
   durationLabel: string;
+  /** Recording to play back; null when the take was not stored. */
+  audioUrl: string | null;
   band: number | null;
   skills: QuestionSkillScore[];
   transcript: TranscriptSegment[];

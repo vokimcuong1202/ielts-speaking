@@ -220,6 +220,8 @@ export class MockTestHistoryService {
         id: String(attempt.id),
         index: position + 1,
         question: attempt.question.textEn,
+        questionSlug: attempt.question.slug,
+        questionPart: attempt.question.part,
         ...(isWeakest && { isWeakest }),
         ...(band !== undefined && { band }),
         ...(band !== undefined && {

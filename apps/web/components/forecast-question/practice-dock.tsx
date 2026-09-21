@@ -1,8 +1,8 @@
 "use client";
 
-import { useState } from "react";
+import { useState, type ReactNode } from "react";
 import Link from "next/link";
-import { ArrowLeft, ArrowRight, Loader2, Square } from "lucide-react";
+import { ArrowLeft, ArrowRight, AudioLines, Loader2, Square, Zap } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/cn";
@@ -20,6 +20,8 @@ interface PracticeDockProps {
   ideaSteps: string[];
   sampleAnswers: QuestionSampleAnswer[];
   record: { state: RecordState; elapsedSeconds: number; error: string | null; onToggle: () => void };
+  /** Hides the question progress strip and the previous / next controls (e.g. when opened from a mock test). */
+  hideNavigation?: boolean;
   previous?: QuestionNavLink;
   next?: QuestionNavLink;
 }
@@ -29,27 +31,41 @@ const arrowClass =
 
 const formatElapsed = (seconds: number) => `${Math.floor(seconds / 60)}:${String(seconds % 60).padStart(2, "0")}`;
 
-function NavArrow({ partId, link, direction }: { partId: string; link?: QuestionNavLink; direction: "prev" | "next" }) {
-  const Icon = direction === "prev" ? ArrowLeft : ArrowRight;
-  const label = direction === "prev" ? "Câu trước" : "Câu tiếp theo";
+function NavLink({ partId, link, direction }: { partId: string; link?: QuestionNavLink; direction: "prev" | "next" }) {
+  const isPrev = direction === "prev";
+  const Icon = isPrev ? ArrowLeft : ArrowRight;
 
-  if (!link) {
-    return (
-      <span aria-hidden className={cn(arrowClass, "opacity-40")}>
-        <Icon className="size-4" />
-      </span>
-    );
-  }
+  if (!link) return <span />;
 
   return (
     <Link
       href={`/forecast/${partId}/${link.id}`}
-      title={`${label}: ${link.title}`}
-      aria-label={`${label}: ${link.title}`}
-      className={cn(arrowClass, "hover:bg-brand-50")}
+      aria-label={`${isPrev ? "Câu trước" : "Câu tiếp theo"}: ${link.title}`}
+      className={cn("flex min-w-0 items-center gap-3", !isPrev && "flex-row-reverse justify-self-end text-right")}
     >
-      <Icon className="size-4" />
+      <span className={cn(arrowClass, "hover:bg-brand-50")}>
+        <Icon className="size-4" />
+      </span>
+      <span className="hidden min-w-0 leading-tight sm:block">
+        <span className="block text-xs tracking-widest text-ink-400 uppercase">{isPrev ? "Câu trước" : "Câu tiếp theo"}</span>
+        <span className="block truncate font-bold text-ink-900">{link.title}</span>
+      </span>
     </Link>
+  );
+}
+
+function IconAction({ label, disabled, onClick, children }: { label: string; disabled: boolean; onClick: () => void; children: ReactNode }) {
+  return (
+    <button
+      type="button"
+      title={label}
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      className="flex size-11 cursor-pointer items-center justify-center rounded-full border border-border-strong bg-surface text-brand-700 transition-colors hover:bg-brand-50 disabled:cursor-not-allowed disabled:opacity-40"
+    >
+      {children}
+    </button>
   );
 }
 
@@ -69,50 +85,59 @@ function RecordButton({ record }: { record: PracticeDockProps["record"] }) {
       ) : (
         <span className="size-3 rounded-full bg-white" />
       )}
-      {state === "submitting" ? "Đang gửi…" : state === "recording" ? `Dừng · ${formatElapsed(elapsedSeconds)}` : "Ghi âm lại câu này"}
+      {state === "submitting" ? "Đang gửi…" : state === "recording" ? `Dừng · ${formatElapsed(elapsedSeconds)}` : "Ghi âm ngay"}
     </Button>
   );
 }
 
-export function PracticeDock({ partId, position, total, topicLabel, remainingToday, ideaSteps, sampleAnswers, record, previous, next }: PracticeDockProps) {
+export function PracticeDock({ partId, position, total, topicLabel, remainingToday, ideaSteps, sampleAnswers, record, hideNavigation = false, previous, next }: PracticeDockProps) {
   const [dialog, setDialog] = useState<"sample" | "ideas" | null>(null);
 
   return (
-    <div className="border-t border-border bg-surface shadow-[0_-8px_24px_-12px_rgba(16,55,57,0.15)]">
-      <div aria-hidden className="flex gap-0.5">
-        {Array.from({ length: total }, (_, i) => (
-          <span key={i} className={cn("h-1 flex-1", i + 1 < position ? "bg-brand-600" : i + 1 === position ? "bg-ink-900" : "bg-border")} />
-        ))}
-      </div>
-
-      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-4 py-3 sm:px-8 lg:px-6">
-        <Button variant="outline" size="sm" className="rounded-full" disabled={sampleAnswers.length === 0} onClick={() => setDialog("sample")}>
-          Xem đáp án mẫu
-        </Button>
-        <Button variant="outline" size="sm" className="rounded-full" disabled={ideaSteps.length === 0} onClick={() => setDialog("ideas")}>
-          Gợi ý ý tưởng
-        </Button>
-
-        <div className="ml-auto flex items-center gap-3">
-          {record.error ? (
-            <span role="alert" className="text-sm text-danger-text">{record.error}</span>
-          ) : remainingToday !== null ? (
-            <span className="text-sm text-ink-400">Còn {remainingToday} lượt nói hôm nay</span>
-          ) : null}
+    <div className="shrink-0 border-t border-border bg-surface">
+      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-3 px-4 py-3 sm:px-6">
+        <div className="flex items-center gap-3">
+          <IconAction label="Xem đáp án mẫu" disabled={sampleAnswers.length === 0} onClick={() => setDialog("sample")}>
+            <AudioLines className="size-5" />
+          </IconAction>
+          <IconAction label="Gợi ý ý tưởng" disabled={ideaSteps.length === 0} onClick={() => setDialog("ideas")}>
+            <Zap className="size-5" />
+          </IconAction>
         </div>
         <RecordButton record={record} />
-
-        <div className="flex items-center gap-2 border-l border-border pl-4">
-          <NavArrow partId={partId} link={previous} direction="prev" />
-          <div className="flex min-w-24 flex-col items-center leading-tight">
-            <span className="text-sm font-bold text-ink-900 tabular-nums">
-              {position} / {total}
-            </span>
-            <span className="text-xs text-ink-500">{topicLabel}</span>
-          </div>
-          <NavArrow partId={partId} link={next} direction="next" />
+        <div className="flex flex-col items-end text-right text-sm leading-snug">
+          {record.error ? (
+            <span role="alert" className="text-danger-text">{record.error}</span>
+          ) : (
+            <>
+              <span className="text-ink-500">{record.state === "recording" ? "Đang ghi âm…" : "Micro đã sẵn sàng"}</span>
+              {remainingToday !== null ? <span className="text-ink-700">Còn {remainingToday} lượt nói hôm nay</span> : null}
+            </>
+          )}
         </div>
       </div>
+
+      {hideNavigation ? null : (
+        <div className="border-t border-border px-4 py-3 sm:px-6">
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-4">
+            <NavLink partId={partId} link={previous} direction="prev" />
+            <div className="flex w-64 max-w-full flex-col items-center gap-1.5 sm:w-96">
+              <div aria-hidden className="flex w-full gap-1">
+                {Array.from({ length: total }, (_, i) => (
+                  <span key={i} className={cn("h-1 flex-1 rounded-full", i + 1 < position ? "bg-brand-600" : i + 1 === position ? "bg-ink-900" : "bg-border")} />
+                ))}
+              </div>
+              <span className="text-sm text-ink-500 tabular-nums">
+                Câu {position} / {total} · {topicLabel} ·{" "}
+                <Link href="/forecast" className="font-bold text-brand-700 hover:underline">
+                  xem cả danh sách ▾
+                </Link>
+              </span>
+            </div>
+            <NavLink partId={partId} link={next} direction="next" />
+          </div>
+        </div>
+      )}
 
       {dialog === "sample" ? (
         <HintDialog title="Đáp án mẫu" onClose={() => setDialog(null)}>

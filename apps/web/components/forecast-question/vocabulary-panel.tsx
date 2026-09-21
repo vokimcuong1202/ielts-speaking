@@ -5,6 +5,7 @@ import { Bookmark, BookmarkCheck, Volume2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
 import { useSpeakWord } from "@/hooks/use-speak-word";
+import { AnswerSupportPanel } from "./answer-support-panel";
 import type { ForecastQuestionPractice, QuestionVocabBand, QuestionVocabItem } from "@/types/forecast-question";
 
 type BandKey = QuestionVocabBand;
@@ -59,13 +60,15 @@ function VocabTag({ item, saved, isSpeaking, isPending, onSpeak, onToggleSave }:
 }
 
 interface VocabularyPanelProps {
+  questionSlug: string;
+  questionId: string;
   vocabularyByBand: ForecastQuestionPractice["vocabularyByBand"];
   onSave: (vocabItemId: string) => Promise<unknown>;
   onRemove: (userVocabId: string) => Promise<unknown>;
   onSaveMany: (vocabItemIds: string[]) => Promise<unknown>;
 }
 
-export function VocabularyPanel({ vocabularyByBand, onSave, onRemove, onSaveMany }: VocabularyPanelProps) {
+export function VocabularyPanel({ questionSlug, questionId, vocabularyByBand, onSave, onRemove, onSaveMany }: VocabularyPanelProps) {
   const [tab, setTab] = useState<PanelTab>("vocab");
   const [band, setBand] = useState<BandKey>("6");
   const [pendingIds, setPendingIds] = useState<Set<string>>(new Set());
@@ -93,7 +96,7 @@ export function VocabularyPanel({ vocabularyByBand, onSave, onRemove, onSaveMany
   ];
 
   return (
-    <aside className="flex flex-col gap-3 rounded-2xl border border-border bg-surface p-4">
+    <aside className="flex flex-col gap-3 border-t border-border bg-surface p-4 sm:p-6 xl:h-dvh xl:overflow-y-auto xl:border-t-0 xl:border-l">
       <div role="tablist" className="flex gap-6 border-b border-border">
         {tabs.map((t) => (
           <button
@@ -159,6 +162,8 @@ export function VocabularyPanel({ vocabularyByBand, onSave, onRemove, onSaveMany
 
           <p className="text-xs text-ink-400">Từ đã lưu sẽ có trong sổ từ vựng để ôn lại sau.</p>
         </>
+      ) : tab === "ai" ? (
+        <AnswerSupportPanel questionSlug={questionSlug} questionId={questionId} />
       ) : (
         <p className="py-10 text-center text-sm text-ink-400">Sắp ra mắt</p>
       )}

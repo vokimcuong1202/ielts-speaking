@@ -110,6 +110,16 @@ export class VocabularyRepository {
     });
   }
 
+  /** Adds (or reuses) the catalogue entry for a learner-selected phrase and puts it in the notebook. */
+  async saveCustom(userId: string, data: { term: string; meaningVi: string; kind: VocabKind; sourceQuestionId?: bigint }) {
+    const item = await this.prisma.vocabItem.upsert({
+      where: { term_meaningVi: { term: data.term, meaningVi: data.meaningVi } },
+      create: { term: data.term, meaningVi: data.meaningVi, kind: data.kind },
+      update: {},
+    });
+    return this.save(userId, { vocabItemId: item.id, source: "manual", sourceQuestionId: data.sourceQuestionId });
+  }
+
   saveMany(userId: string, vocabItemIds: bigint[], data: { source: VocabSource; sourceQuestionId?: bigint; sourceAttemptId?: bigint }) {
     return this.prisma.$transaction(
       vocabItemIds.map((vocabItemId) =>

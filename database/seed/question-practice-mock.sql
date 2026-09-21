@@ -1,6 +1,6 @@
 -- Dev-only mock for the question practice page ("Why are some students popular?").
 --   psql "$DATABASE_URL" -v uid=442d0a20-a88c-4001-98be-4a51afb06eca -f database/seed/question-practice-mock.sql
--- Gives the user 5 scored attempts with bands 4.0 / 4.5 / 5.5 / 6.5 / 7.5 (one per score tone),
+-- Also adds band 6 / 8 sample answers for the question. Gives the user 5 scored attempts with bands 4.0 / 4.5 / 5.5 / 6.5 / 7.5 (one per score tone),
 -- transcript diffs, "Nói ngắn lại" rewrites, and suggested vocabulary for the Band 6 / 7 / 8 tabs.
 -- Inserts only, and skips when the user already has attempts on the question.
 \set ON_ERROR_STOP on
@@ -39,6 +39,15 @@ BEGIN
                ('command respect', 7, 0), ('have a wide social circle', 7, 1), ('exude charisma', 8, 1)) x(term, tier, ord)
   JOIN vocab_items v ON v.term = x.term
   ON CONFLICT DO NOTHING;
+
+  -- extra sample answers so "Cho mình câu mẫu khác" has something to cycle through
+  INSERT INTO sample_answers (question_id, band, body_en, notes_vi)
+  SELECT qid, x.band, x.body, x.notes
+  FROM (VALUES
+    (6.0::numeric, 'Some students are popular because they are good at subjects like maths and they are really friendly. Other students like to be around them, and many of them look up to them.', 'Câu đơn giản, đủ ý — phù hợp band 6.'),
+    (8.0::numeric, 'Some students are popular simply because they stand out from the crowd — maybe they have a good sense of humour, or they are just really good at subjects like maths. People naturally look up to them.', 'Dùng collocation tự nhiên và cấu trúc “maybe … or …” để nêu nhiều khả năng — band 8.')
+  ) x(band, body, notes)
+  WHERE NOT EXISTS (SELECT 1 FROM sample_answers sa WHERE sa.question_id = qid AND sa.band = x.band);
 
   IF EXISTS (SELECT 1 FROM attempts WHERE user_id = uid AND question_id = qid) THEN
     RAISE NOTICE 'user % already has attempts on question % - attempts not inserted', uid, qid;

@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { Play } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/cn";
@@ -58,9 +59,14 @@ export function QuestionReviewItem({ question }: { question: QuestionReview }) {
 
         {question.band != null ? (
           <div className="flex shrink-0 flex-col items-center gap-1">
-            <a href="#" className="mb-1 text-xs font-semibold text-brand-700 hover:underline">
-              Cải thiện câu này →
-            </a>
+            {question.questionSlug && question.questionPart ? (
+              <Link
+                href={`/forecast/${question.questionPart}/${question.questionSlug}?from=thi-thu`}
+                className="mb-1 text-xs font-semibold text-brand-700 hover:underline"
+              >
+                Cải thiện câu này →
+              </Link>
+            ) : null}
             <BandBadge band={question.band} status="completed" size={66} />
             <a href="#" className="text-xs font-medium text-ink-400 hover:text-ink-700">
               Báo lỗi

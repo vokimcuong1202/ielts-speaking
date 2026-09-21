@@ -13,6 +13,7 @@ import { TranscriptionModule } from "./modules/transcription/transcription.modul
 import { EvaluationModule } from "./modules/evaluation/evaluation.module";
 import { QuotaModule } from "./modules/quota/quota.module";
 import { QuestionsModule } from "./modules/questions/questions.module";
+import { AnswerSupportModule } from "./modules/answer-support/answer-support.module";
 import { ForecastModule } from "./modules/forecast/forecast.module";
 import { VocabularyModule } from "./modules/vocabulary/vocabulary.module";
 import { MockTestsModule } from "./modules/mock-tests/mock-tests.module";
@@ -29,6 +30,7 @@ import { WorkersModule } from "./workers/workers.module";
     UsersModule,
     TopicGroupsModule,
     QuestionsModule,
+    AnswerSupportModule,
     ForecastModule,
     VocabularyModule,
     MockTestsModule,

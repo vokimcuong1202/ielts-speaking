@@ -67,7 +67,7 @@ export class MockTestsRepository {
         attempts: {
           orderBy: { recordedAt: "asc" },
           include: {
-            question: { select: { part: true, textEn: true } },
+            question: { select: { part: true, slug: true, textEn: true } },
             attemptScores: true,
             attemptTranscriptSpans: { orderBy: { charStart: "asc" } },
           },
